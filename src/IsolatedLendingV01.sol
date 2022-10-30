@@ -38,9 +38,9 @@ contract IsolatedLendingV01 is ERC4626{
     uint256 private constant FULL_UTILIZATION_MINUS_MAX = FULL_UTILIZATION - MAXIMUM_TARGET_UTILIZATION;
     uint256 private constant FACTOR_PRECISION = 1e18;
 
-    uint64 private constant STARTING_INTEREST_PER_SECOND = 317097920; // approx 1% APR
-    uint64 private constant MINIMUM_INTEREST_PER_SECOND = 79274480; // approx 0.25% APR
-    uint64 private constant MAXIMUM_INTEREST_PER_SECOND = 317097920000; // approx 1000% APR
+    uint256 private constant STARTING_INTEREST_PER_SECOND = 317097920; // approx 1% APR
+    uint256 private constant MINIMUM_INTEREST_PER_SECOND = 79274480; // approx 0.25% APR
+    uint256 private constant MAXIMUM_INTEREST_PER_SECOND = 317097920000; // approx 1000% APR
     uint256 private constant INTEREST_ELASTICITY = 28800e36; // Half or double in 28800 seconds (8 hours) if linear
 
     uint256 private constant EXCHANGE_RATE_PRECISION = 1e18;
@@ -56,6 +56,33 @@ contract IsolatedLendingV01 is ERC4626{
 
     constructor(ERC20 _asset, address _collateral, string memory _name, string memory _symbol)ERC4626(_asset, _name, _symbol){
         collateral = IERC20(_collateral);
+        accrueInfo.interestPerSecond = STARTING_INTEREST_PER_SECOND;
+    }
+
+    function accrue() public{
+        AccrueInfo memory _accrueInfo = accrueInfo;
+        uint256 elapsedTime = block.timestamp - _accrueInfo.lastAccrued;
+        if (elapsedTime == 0) {
+            return;
+        }
+        _accrueInfo.lastAccrued = block.timestamp;
+
+        if(totalBorrow == 0){
+            if(_accrueInfo.interestPerSecond != STARTING_INTEREST_PER_SECOND){
+                _accrueInfo.interestPerSecond = STARTING_INTEREST_PER_SECOND;
+            }
+            accrueInfo = _accrueInfo;
+            return;
+        }
+
+        uint256 extraAmount = 0;
+        uint256 feeFraction = 0;
+
+        extraAmount = totalBorrow * _accrueInfo.interestPerSecond * elapsedTime / 1e18;
+        totalBorrow = totalBorrow + extraAmount;
+        // add interest as asset down here, total borrow must == total asset
+        // add user's borrow amount as part of total borrow's share
+
     }
 
     function totalAssets() public override view virtual returns (uint256){
@@ -77,7 +104,7 @@ contract IsolatedLendingV01 is ERC4626{
     function borrow(uint256 _amount)public {
         uint256 feeAmount = _amount*(BORROW_OPENING_FEE) / BORROW_OPENING_FEE_PRECISION; // A flat % fee is charged for any borrow
         userBorrowAmount[msg.sender] += _amount + feeAmount;
-        totalBorrow = userBorrowAmount[msg.sender];
+        totalBorrow += userBorrowAmount[msg.sender];
         totalAsset -= _amount;
         asset.transfer(msg.sender, _amount);    
     }

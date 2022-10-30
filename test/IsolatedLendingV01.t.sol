@@ -63,8 +63,14 @@ contract IsolatedLendingV01Test is Test {
         vm.startPrank(Alice);
         isolatedLending.borrow(1000000e18);
         vm.stopPrank();
-        console.log(isolatedLending.userBorrowAmount(address(Alice))/1e18);
-        console.log(isolatedLending.convertToAssets(isolatedLending.balanceOf(address(Bob)))/1e18);
+        // console.log(isolatedLending.userBorrowAmount(address(Alice))/1e18);
+        console.log(isolatedLending.totalBorrow()/1e18);
+        vm.warp(block.timestamp + 500000);
+        isolatedLending.accrue();
+        // console.log(isolatedLending.userBorrowAmount(address(Alice))/1e18);
+        console.log(isolatedLending.totalBorrow()/1e18);
+
+        // console.log(isolatedLending.convertToAssets(isolatedLending.balanceOf(address(Bob)))/1e18);
     }
 
 
