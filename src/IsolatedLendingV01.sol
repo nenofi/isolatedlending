@@ -83,6 +83,10 @@ contract IsolatedLendingV01 is ERC4626{
         // add interest as asset down here, total borrow must == total asset
         // add user's borrow amount as part of total borrow's share
 
+        //*borrow* elastic = Total token amount to be repayed by borrowers, base = Total parts of the debt held by borrowers
+        // return base
+        // base = elastic * total.base / total.elastic
+
     }
 
     function totalAssets() public override view virtual returns (uint256){
