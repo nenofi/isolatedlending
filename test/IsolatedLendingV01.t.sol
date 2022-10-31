@@ -19,17 +19,17 @@ contract IsolatedLendingV01Test is Test {
         neIDR = new MockERC20("neRupiah", "neIDR", 18);
         usdt = new MockERC20("Tether USD", "USDT", 6);
         isolatedLending = new IsolatedLendingV01(neIDR, address(usdt), "neRupiahUSDT vault", "neIDR/USDT");
-        vm.startPrank(Bob);
-        neIDR.mint(10000000e18);
-        vm.stopPrank();
-        vm.startPrank(Alice);
-        usdt.mint(1000e6);
-        vm.stopPrank();
+        // vm.startPrank(Bob);
+        // neIDR.mint(10000000e18);
+        // vm.stopPrank();
+        // vm.startPrank(Alice);
+        // usdt.mint(1000e6);
+        // vm.stopPrank();
     }
 
     function testAddAsset() public {
         vm.startPrank(Bob);
-        // neIDR.mint(10000000e18);
+        neIDR.mint(10000000e18);
         neIDR.approve(address(isolatedLending), 10000000e18);
         isolatedLending.addAsset(10000000e18);
         vm.stopPrank();
@@ -61,32 +61,46 @@ contract IsolatedLendingV01Test is Test {
 
 
         vm.startPrank(Alice);
-        isolatedLending.borrow(500000e18);
-        console.log(isolatedLending.userBorrowShare(address(Alice)));
-        console.log(isolatedLending.totalAmountBorrowed(address(Alice)));
+        isolatedLending.borrow(9500000e18);
+        // console.log(neIDR.balanceOf(address(Alice)));
+        // console.log(isolatedLending.userBorrowShare(address(Alice)));
+        // console.log(isolatedLending.totalAmountBorrowed(address(Alice)));
         // console.log(isolatedLending.totalBorrowShares());
         // console.log(isolatedLending.getPricePerShare());
         // console.log(isolatedLending.userBorrowShare(address(Alice)));
         // isolatedLending.convertSharesToAmount(500000e18);
-        vm.warp(block.timestamp + 500000);
+        vm.warp(block.timestamp + 1);
         isolatedLending.accrue();
+        console.log(isolatedLending.getPricePerShare());
+
         vm.stopPrank();
 
-        console.log(isolatedLending.userBorrowShare(address(Alice)));
-        console.log(isolatedLending.totalAmountBorrowed(address(Alice)));
-
-
-        vm.startPrank(Charlie);
-        isolatedLending.borrow(100000e18);
-        // console.log(isolatedLending.userBorrowAmount(address(Charlie)));
-        vm.warp(block.timestamp + 5000000);
+        vm.warp(block.timestamp + 2629743);
         isolatedLending.accrue();
-        vm.stopPrank();
+        console.log(isolatedLending.totalAmountBorrowed(address(Alice))/1e18);
+        console.log(isolatedLending.getPricePerShare());
 
-        console.log(isolatedLending.userBorrowShare(address(Alice)));
-        console.log(isolatedLending.totalAmountBorrowed(address(Alice)));
-        console.log(isolatedLending.userBorrowShare(address(Charlie)));
-        console.log(isolatedLending.totalAmountBorrowed(address(Charlie)));
+
+        // vm.warp(block.timestamp + 5259486);
+        // isolatedLending.accrue();
+        // console.log(isolatedLending.totalAmountBorrowed(address(Alice))/1e18);
+
+
+        // console.log(isolatedLending.userBorrowShare(address(Alice)));
+        // console.log(isolatedLending.totalAmountBorrowed(address(Alice))/1e18);
+
+
+        // vm.startPrank(Charlie);
+        // isolatedLending.borrow(5000000e18);
+        // // console.log(isolatedLending.userBorrowAmount(address(Charlie)));
+        // vm.warp(block.timestamp + 31556926);
+        // isolatedLending.accrue();
+        // vm.stopPrank();
+
+        // console.log(isolatedLending.userBorrowShare(address(Alice)));
+        // console.log(isolatedLending.totalAmountBorrowed(address(Alice))/1e18);
+        // console.log(isolatedLending.userBorrowShare(address(Charlie)));
+        // console.log(isolatedLending.totalAmountBorrowed(address(Charlie))/1e18);
 
         // console.log(isolatedLending.totalBorrow());
         // console.log(isolatedLending.userBorrowAmount(address(Charlie)));
@@ -95,6 +109,65 @@ contract IsolatedLendingV01Test is Test {
         // console.log(isolatedLending.currentUserBorrowAmount(address(Alice)));
 
         // console.log(isolatedLending.convertToAssets(isolatedLending.balanceOf(address(Bob)))/1e18);
+    }
+
+    function testAccrue() public {
+        vm.startPrank(Bob);
+        neIDR.mint(10000000e18);
+        neIDR.approve(address(isolatedLending), 10000000e18);
+        isolatedLending.addAsset(10000000e18);
+        vm.stopPrank();
+
+        
+        vm.startPrank(Alice);
+        isolatedLending.borrow(9000000e18);
+        vm.warp(block.timestamp + 500000);
+        isolatedLending.accrue();
+        // isolatedLending.repay(50000e18);
+        vm.stopPrank();
+
+    }
+
+    function testRepay() public {
+        vm.startPrank(Bob);
+        neIDR.mint(10000000e18);
+        console.log(neIDR.balanceOf(address(Bob)));
+        neIDR.approve(address(isolatedLending), 10000000e18);
+        isolatedLending.addAsset(10000000e18);
+        console.log(neIDR.balanceOf(address(Bob)));
+        vm.stopPrank();
+
+        
+        vm.startPrank(Alice);
+        neIDR.mint(10000000e18);
+        neIDR.approve(address(isolatedLending), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
+        isolatedLending.borrow(9000000e18);
+        vm.warp(block.timestamp + 1);
+        isolatedLending.accrue();
+        vm.warp(block.timestamp + 500000);
+        isolatedLending.accrue();
+        isolatedLending.repay(9006011077841700379374997);
+        // console.log(isolatedLending.totalAmountBorrowed(address(Alice)));
+        // console.log(neIDR.balanceOf(address(Alice)));
+        vm.stopPrank();
+
+        vm.startPrank(Bob);
+        // console.log(neIDR.balanceOf(address(isolatedLending)));
+        // console.log(isolatedLending.totalAssets())
+        isolatedLending.approve(address(isolatedLending),0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff );
+        isolatedLending.redeem(10000000000000000000000000, address(Bob), address(Bob));
+
+
+        console.log(isolatedLending.balanceOf(address(Bob)));
+        // console.log(isolatedLending.previewRedeem(10000000e18));
+        // isolatedLending.maxRedeem(address(Bob));
+        console.log(neIDR.balanceOf(address(Bob)));
+
+        // isolatedLending.withdraw(5000000e18, address(Bob), address(Bob));
+        // console.log(neIDR.balanceOf(address(Bob)));
+        vm.stopPrank();
+
+
     }
 
 
