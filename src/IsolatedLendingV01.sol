@@ -3,6 +3,7 @@ pragma solidity ^0.8.16;
 
 import "solmate/mixins/ERC4626.sol";
 import "./interface/IERC20.sol";
+import "forge-std/console.sol";
 
 contract IsolatedLendingV01 is ERC4626{
 
@@ -111,5 +112,14 @@ contract IsolatedLendingV01 is ERC4626{
         totalBorrow += userBorrowAmount[msg.sender];
         totalAsset -= _amount;
         asset.transfer(msg.sender, _amount);    
+        // console.log(userBorrowAmount[msg.sender]);
+        // console.log(totalBorrow);
+    }
+
+    function getUserBorrowAmount(address _user) external view returns (uint256){
+        // console.log(totalBorrow);
+        // console.log(userBorrowAmount[_user]);
+        // console.log(userBorrowAmount[_user]*totalBorrow/userBorrowAmount[_user]);
+        return userBorrowAmount[_user]*totalBorrow/userBorrowAmount[_user];
     }
 }
