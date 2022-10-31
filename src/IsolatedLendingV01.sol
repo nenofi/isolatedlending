@@ -10,7 +10,7 @@ contract IsolatedLendingV01 is ERC4626{
 
     IERC20 public collateral;
     uint256 public totalBorrow;
-    uint256 public totalAsset;
+    // uint256 public totalAsset;
     uint256 public totalBorrowShares;
     // Total amounts
     uint256 public totalCollateralAmount; // Total collateral supplied
@@ -126,7 +126,6 @@ contract IsolatedLendingV01 is ERC4626{
     function addAsset(uint256 _amount)public returns (uint256 shares){
         accrue();
         shares = deposit(_amount, msg.sender);
-        totalAsset += _amount;
     }
 
     function addCollateral(uint256 _amount) public {

@@ -131,10 +131,10 @@ contract IsolatedLendingV01Test is Test {
     function testRepay() public {
         vm.startPrank(Bob);
         neIDR.mint(10000000e18);
-        console.log(neIDR.balanceOf(address(Bob)));
+        // console.log(neIDR.balanceOf(address(Bob)));
         neIDR.approve(address(isolatedLending), 10000000e18);
         isolatedLending.addAsset(10000000e18);
-        console.log(neIDR.balanceOf(address(Bob)));
+        // console.log(neIDR.balanceOf(address(Bob)));
         vm.stopPrank();
 
         
@@ -155,18 +155,20 @@ contract IsolatedLendingV01Test is Test {
         // console.log(neIDR.balanceOf(address(isolatedLending)));
         // console.log(isolatedLending.totalAssets())
         isolatedLending.approve(address(isolatedLending),0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff );
-        isolatedLending.redeem(10000000000000000000000000, address(Bob), address(Bob));
+        isolatedLending.redeem(10000000e18, address(Bob), address(Bob));
 
 
-        console.log(isolatedLending.balanceOf(address(Bob)));
+        // console.log(isolatedLending.balanceOf(address(Bob)));
         // console.log(isolatedLending.previewRedeem(10000000e18));
         // isolatedLending.maxRedeem(address(Bob));
-        console.log(neIDR.balanceOf(address(Bob)));
+        // console.log(neIDR.balanceOf(address(Bob)));
 
         // isolatedLending.withdraw(5000000e18, address(Bob), address(Bob));
         // console.log(neIDR.balanceOf(address(Bob)));
         vm.stopPrank();
 
+        console.log(isolatedLending.totalAssets());
+        console.log(neIDR.balanceOf(address(isolatedLending)));
 
     }
 
