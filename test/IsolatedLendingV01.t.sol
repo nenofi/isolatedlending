@@ -39,12 +39,12 @@ contract IsolatedLendingV01Test is Test {
 
     function testAddCollateral() public {
         vm.startPrank(Alice);
-        // usdt.mint(1000e6);
+        usdt.mint(1000e6);
         usdt.approve(address(isolatedLending), 1000e6);
         isolatedLending.addCollateral(1000e6);
-        console.log(isolatedLending.userCollateralAmount(address(Alice))/1e6);
+        // console.log(isolatedLending.userCollateralAmount(address(Alice))/1e6);
         vm.stopPrank();
-        // assertEq(isolatedLending.balanceOf(address(Bob)), 10000000e18);
+        // assertEq(isolatedLending.balanceOf(address(Alice)), 1000e6);
         // vm.startPrank(Alice);
         // isolatedLending.borrow(1000000e18);
         // vm.stopPrank();
@@ -57,20 +57,42 @@ contract IsolatedLendingV01Test is Test {
         neIDR.mint(10000000e18);
         neIDR.approve(address(isolatedLending), 10000000e18);
         isolatedLending.addAsset(10000000e18);
-        // console.log(isolatedLending.balanceOf(address(Bob))/1e18);
         vm.stopPrank();
-        // assertEq(isolatedLending.balanceOf(address(Bob)), 10000000e18);
+
+
         vm.startPrank(Alice);
-        isolatedLending.borrow(1000000e18);
-        vm.stopPrank();
-        // console.log(isolatedLending.userBorrowAmount(address(Alice))/1e18);
-        // console.log(isolatedLending.totalBorrow()/1e18);
+        isolatedLending.borrow(500000e18);
+        console.log(isolatedLending.userBorrowShare(address(Alice)));
+        console.log(isolatedLending.totalAmountBorrowed(address(Alice)));
+        // console.log(isolatedLending.totalBorrowShares());
+        // console.log(isolatedLending.getPricePerShare());
+        // console.log(isolatedLending.userBorrowShare(address(Alice)));
+        // isolatedLending.convertSharesToAmount(500000e18);
         vm.warp(block.timestamp + 500000);
         isolatedLending.accrue();
-        // console.log(isolatedLending.userBorrowAmount(address(Alice))/1e18);
-        // console.log(isolatedLending.totalBorrow()/1e18);
-        console.log(isolatedLending.totalBorrow());
-        console.log(isolatedLending.getUserBorrowAmount(address(Alice)));
+        vm.stopPrank();
+
+        console.log(isolatedLending.userBorrowShare(address(Alice)));
+        console.log(isolatedLending.totalAmountBorrowed(address(Alice)));
+
+
+        vm.startPrank(Charlie);
+        isolatedLending.borrow(100000e18);
+        // console.log(isolatedLending.userBorrowAmount(address(Charlie)));
+        vm.warp(block.timestamp + 5000000);
+        isolatedLending.accrue();
+        vm.stopPrank();
+
+        console.log(isolatedLending.userBorrowShare(address(Alice)));
+        console.log(isolatedLending.totalAmountBorrowed(address(Alice)));
+        console.log(isolatedLending.userBorrowShare(address(Charlie)));
+        console.log(isolatedLending.totalAmountBorrowed(address(Charlie)));
+
+        // console.log(isolatedLending.totalBorrow());
+        // console.log(isolatedLending.userBorrowAmount(address(Charlie)));
+        // console.log(isolatedLending.currentUserBorrowAmount(address(Charlie)));
+
+        // console.log(isolatedLending.currentUserBorrowAmount(address(Alice)));
 
         // console.log(isolatedLending.convertToAssets(isolatedLending.balanceOf(address(Bob)))/1e18);
     }
