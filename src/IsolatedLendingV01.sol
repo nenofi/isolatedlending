@@ -14,12 +14,14 @@ contract IsolatedLendingV01 is ERC4626{
     uint256 public totalBorrowShares;
     // Total amounts
     uint256 public totalCollateralAmount; // Total collateral supplied
-
+    uint256 public totalCollateralShare;
 
     //user balances
     mapping(address => uint256) public userCollateralAmount;
+    mapping(address => uint256) public userCollateralShare;
+
     // userAssetFraction is called balanceOf for ERC20 compatibility (it's in ERC20.sol)
-    mapping(address => uint256) public userBorrowAmount;
+    // mapping(address => uint256) public userBorrowAmount;
     mapping(address => uint256) public userBorrowShare;
 
     uint256 public exchangeRate;
@@ -62,6 +64,11 @@ contract IsolatedLendingV01 is ERC4626{
     constructor(ERC20 _asset, address _collateral, string memory _name, string memory _symbol)ERC4626(_asset, _name, _symbol){
         collateral = IERC20(_collateral);
         accrueInfo.interestPerSecond = STARTING_INTEREST_PER_SECOND;
+        exchangeRate = 15000e18;
+    }
+
+    function totalAssets() public override view virtual returns (uint256){
+        return asset.balanceOf(address(this));
     }
 
     function accrue() public{
@@ -85,18 +92,8 @@ contract IsolatedLendingV01 is ERC4626{
 
         extraAmount = totalBorrow * _accrueInfo.interestPerSecond * elapsedTime / 1e18;
         totalBorrow = totalBorrow + extraAmount;
-        // add interest as asset down here, total borrow must == total asset
-        // add user's borrow amount as part of total borrow's share
 
-        //*borrow* elastic = Total token amount to be repayed by borrowers, base = Total parts of the debt held by borrowers
-        // return base
-        // base = elastic * total.base / total.elastic
-
-        // update interest rate 
-        // console.log(totalBorrow);
-        // console.log(asset.balanceOf(address(this)));
         uint256 utilization = totalBorrow*UTILIZATION_PRECISION / asset.balanceOf(address(this));
-        // console.log(utilization);
         if(utilization < MINIMUM_TARGET_UTILIZATION){
             uint256 underFactor = (MINIMUM_TARGET_UTILIZATION - utilization) * FACTOR_PRECISION / MINIMUM_TARGET_UTILIZATION;
             uint256 scale = INTEREST_ELASTICITY + (underFactor*underFactor*elapsedTime);
@@ -115,13 +112,25 @@ contract IsolatedLendingV01 is ERC4626{
         }
 
         accrueInfo = _accrueInfo;
-        // console.log(accrueInfo.interestPerSecond);
-
     }
 
-    function totalAssets() public override view virtual returns (uint256){
-        return asset.balanceOf(address(this));
+    function isSolvent(
+        address _user
+    ) public view returns (bool) {
+        // accrue must have already been called!
+        uint256 borrowPart = userBorrowShare[_user];
+        if (borrowPart == 0) return true;
+        uint256 collateralAmount = userCollateralAmount[_user];
+        if (collateralAmount == 0) return false;
+
+        return collateralAmount*75/100 >= totalAmountBorrowed(_user)*1e6/exchangeRate;
     }
+
+    modifier solvent() {
+        _;
+        require(isSolvent(msg.sender), "NenoLend: user insolvent");
+    }
+
 
     function addAsset(uint256 _amount)public returns (uint256 shares){
         accrue();
@@ -134,7 +143,7 @@ contract IsolatedLendingV01 is ERC4626{
         collateral.transferFrom(msg.sender, address(this), _amount);
     }
 
-    function borrow(uint256 _amount)public {
+    function borrow(uint256 _amount)public solvent{
         accrue();
 
         uint256 _pool = totalBorrow;
@@ -178,8 +187,6 @@ contract IsolatedLendingV01 is ERC4626{
 
     
     function getPricePerShare() public view returns (uint256){
-        // console.log(totalBorrowShares);
-        // return totalBorrow*1e18/totalBorrowShares;
         return totalBorrowShares == 0 ? 1e18 : (totalBorrow*1e18)/totalBorrowShares;
     }
 }
