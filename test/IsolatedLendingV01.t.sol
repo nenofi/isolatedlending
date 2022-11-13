@@ -38,6 +38,12 @@ contract IsolatedLendingV01Test is Test {
     }
 
     function testAddCollateral() public {
+        vm.startPrank(Charlie);
+        neIDR.mint(20000000e18);
+        neIDR.approve(address(isolatedLending), 20000000e18);
+        // isolatedLending.addAsset(20000000e18);
+        vm.stopPrank();
+
         vm.startPrank(Bob);
         neIDR.mint(20000000e18);
         neIDR.approve(address(isolatedLending), 20000000e18);
@@ -52,8 +58,22 @@ contract IsolatedLendingV01Test is Test {
         // console.log(isolatedLending.userCollateralAmount(address(Alice)) * isolatedLending.exchangeRate());
         // console.log(15000000000000000000000000/1e18);
         // isolatedLending.isSolvent(address(Alice));
-        console.log(isolatedLending.totalAmountBorrowed(address(Alice)));
+        // console.log(isolatedLending.totalAmountBorrowed(address(Alice)));
+        // console.log(isolatedLending.userCollateralAmount(address(Alice))*isolatedLending.exchangeRate()/1e6);
+        // console.log(isolatedLending.totalAmountBorrowed(address(Alice)));
         vm.stopPrank();
+        console.log(isolatedLending.isSolvent(address(Alice)));
+        isolatedLending.updateExchangeRate();
+        vm.startPrank(Charlie);
+        isolatedLending.liquidate(address(Alice), 1);
+        console.log(usdt.balanceOf(address(Charlie)));
+        vm.stopPrank();
+        console.log(isolatedLending.isSolvent(address(Alice)));
+
+        // console.log(isolatedLending.isSolvent(address(Alice)));
+        // console.log(isolatedLending.userCollateralAmount(address(Alice))*isolatedLending.exchangeRate()/1e6);
+        // console.log(isolatedLending.totalAmountBorrowed(address(Alice)));
+
         // assertEq(isolatedLending.balanceOf(address(Alice)), 1000e6);
         // vm.startPrank(Alice);
         // isolatedLending.borrow(1000000e18);
@@ -61,7 +81,6 @@ contract IsolatedLendingV01Test is Test {
         // console.log(isolatedLending.userBorrowAmount(address(Alice))/1e18);
         // console.log(isolatedLending.convertToAssets(isolatedLending.balanceOf(address(Bob)))/1e18);
     }
-
     // function testAddAliceBorrow() public {
     //     vm.startPrank(Bob);
     //     neIDR.mint(10000000e18);

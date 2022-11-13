@@ -1,4 +1,13 @@
 // SPDX-License-Identifier: MIT
+// IsolatedLendingV01
+
+// ███╗░░██╗███████╗███╗░░██╗░█████╗░███████╗██╗
+// ████╗░██║██╔════╝████╗░██║██╔══██╗██╔════╝██║
+// ██╔██╗██║█████╗░░██╔██╗██║██║░░██║█████╗░░██║
+// ██║╚████║██╔══╝░░██║╚████║██║░░██║██╔══╝░░██║
+// ██║░╚███║███████╗██║░╚███║╚█████╔╝██║░░░░░██║
+// ╚═╝░░╚══╝╚══════╝╚═╝░░╚══╝░╚════╝░╚═╝░░░░░╚═╝
+
 pragma solidity ^0.8.16;
 
 import "solmate/mixins/ERC4626.sol";
@@ -26,9 +35,14 @@ contract IsolatedLendingV01 is ERC4626{
 
     uint256 public exchangeRate;
 
+    // struct AccrueInfo {
+    //     uint256 interestPerSecond;
+    //     uint256 lastAccrued;
+    //     uint256 feesEarnedFraction;
+    // }
     struct AccrueInfo {
-        uint256 interestPerSecond;
-        uint256 lastAccrued;
+        uint64 interestPerSecond;
+        uint64 lastAccrued;
         uint256 feesEarnedFraction;
     }
 
@@ -45,9 +59,9 @@ contract IsolatedLendingV01 is ERC4626{
     uint256 private constant FULL_UTILIZATION_MINUS_MAX = FULL_UTILIZATION - MAXIMUM_TARGET_UTILIZATION;
     uint256 private constant FACTOR_PRECISION = 1e18;
 
-    uint256 private constant STARTING_INTEREST_PER_SECOND = 317097920; // approx 1% APR
-    uint256 private constant MINIMUM_INTEREST_PER_SECOND = 79274480; // approx 0.25% APR
-    uint256 private constant MAXIMUM_INTEREST_PER_SECOND = 317097920000; // approx 1000% APR
+    uint64 private constant STARTING_INTEREST_PER_SECOND = 317097920; // approx 1% APR
+    uint64 private constant MINIMUM_INTEREST_PER_SECOND = 79274480; // approx 0.25% APR
+    uint64 private constant MAXIMUM_INTEREST_PER_SECOND = 317097920000; // approx 1000% APR
     uint256 private constant INTEREST_ELASTICITY = 28800e36; // Half or double in 28800 seconds (8 hours) if linear
 
     uint256 private constant EXCHANGE_RATE_PRECISION = 1e18;
@@ -77,7 +91,7 @@ contract IsolatedLendingV01 is ERC4626{
         if (elapsedTime == 0) {
             return;
         }
-        _accrueInfo.lastAccrued = block.timestamp;
+        _accrueInfo.lastAccrued = uint64(block.timestamp);
 
         if(totalBorrow == 0){
             if(_accrueInfo.interestPerSecond != STARTING_INTEREST_PER_SECOND){
@@ -97,18 +111,18 @@ contract IsolatedLendingV01 is ERC4626{
         if(utilization < MINIMUM_TARGET_UTILIZATION){
             uint256 underFactor = (MINIMUM_TARGET_UTILIZATION - utilization) * FACTOR_PRECISION / MINIMUM_TARGET_UTILIZATION;
             uint256 scale = INTEREST_ELASTICITY + (underFactor*underFactor*elapsedTime);
-            _accrueInfo.interestPerSecond = _accrueInfo.interestPerSecond*(INTEREST_ELASTICITY) / scale;
+            _accrueInfo.interestPerSecond = uint64(uint256(_accrueInfo.interestPerSecond)*(INTEREST_ELASTICITY) / scale);
             if (_accrueInfo.interestPerSecond < MINIMUM_INTEREST_PER_SECOND) {
                 _accrueInfo.interestPerSecond = MINIMUM_INTEREST_PER_SECOND; // 0.25% APR minimum
             }
         } else if (utilization > MAXIMUM_TARGET_UTILIZATION) {
             uint256 overFactor = (utilization - MAXIMUM_TARGET_UTILIZATION) * FACTOR_PRECISION / FULL_UTILIZATION_MINUS_MAX;
             uint256 scale = INTEREST_ELASTICITY+(overFactor*overFactor*elapsedTime);
-            uint256 newInterestPerSecond = _accrueInfo.interestPerSecond*scale / INTEREST_ELASTICITY;
+            uint256 newInterestPerSecond = uint256(_accrueInfo.interestPerSecond)*scale / INTEREST_ELASTICITY;
             if (newInterestPerSecond > MAXIMUM_INTEREST_PER_SECOND) {
                 newInterestPerSecond = MAXIMUM_INTEREST_PER_SECOND; // 1000% APR maximum
             }
-            _accrueInfo.interestPerSecond = newInterestPerSecond;
+            _accrueInfo.interestPerSecond = uint64(newInterestPerSecond);
         }
 
         accrueInfo = _accrueInfo;
@@ -123,12 +137,40 @@ contract IsolatedLendingV01 is ERC4626{
         uint256 collateralAmount = userCollateralAmount[_user];
         if (collateralAmount == 0) return false;
 
+        console.log(collateralAmount*75/100);
+        console.log(totalAmountBorrowed(_user)*1e6/exchangeRate);
+
         return collateralAmount*75/100 >= totalAmountBorrowed(_user)*1e6/exchangeRate;
     }
 
     modifier solvent() {
         _;
         require(isSolvent(msg.sender), "NenoLend: user insolvent");
+    }
+
+    function liquidate(address _user, uint256 _amount) public {
+        if(!isSolvent(_user)){
+            uint256 amountToRepay = totalAmountBorrowed(_user)-(userCollateralAmount[_user]*exchangeRate/1e6);
+            // console.log(amountToRepay);
+            // console.log(userCollateralAmount[_user]*exchangeRate/1e6);
+            uint256 sharesToRepay = borrowAmountToShares(_amount);
+            // console.log(_amount/exchangeRate*1e12);
+            userBorrowShare[_user] -= sharesToRepay;
+            totalBorrowShares -= sharesToRepay;
+            totalBorrow -= _amount;
+
+            asset.transferFrom(msg.sender, address(this), _amount);
+            collateral.transfer(msg.sender, 12e5);
+
+            // amountToRepay = totalAmountBorrowed(_user)-(userCollateralAmount[_user]*exchangeRate/1e6); 
+            // console.log(amountToRepay);
+ 
+
+        }
+    }
+
+    function updateExchangeRate() public {
+        exchangeRate = 10000e18;
     }
 
 
