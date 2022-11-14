@@ -160,19 +160,17 @@ contract IsolatedLendingV01 is ERC4626{
             totalBorrow -= _amount;
 
             asset.transferFrom(msg.sender, address(this), _amount);
-            collateral.transfer(msg.sender, 12e5);
+            uint256 collateralLiquidated = _amount/exchangeRate;
+            collateral.transfer(msg.sender, collateralLiquidated);
 
             // amountToRepay = totalAmountBorrowed(_user)-(userCollateralAmount[_user]*exchangeRate/1e6); 
             // console.log(amountToRepay);
- 
-
         }
     }
 
     function updateExchangeRate() public {
-        exchangeRate = 10000e18;
+        exchangeRate = 15000e18;
     }
-
 
     function addAsset(uint256 _amount)public returns (uint256 shares){
         accrue();
@@ -184,6 +182,15 @@ contract IsolatedLendingV01 is ERC4626{
         totalCollateralAmount += totalCollateralAmount + _amount;
         collateral.transferFrom(msg.sender, address(this), _amount);
     }
+
+    function removeCollateral(uint256 _amount) public solvent {
+        // accrue must be called because we check solvency
+        accrue();
+        userCollateralAmount[msg.sender] -= _amount;
+        totalCollateralAmount -= _amount;
+        collateral.transferFrom(address(this), msg.sender, _amount);
+    }
+
 
     function borrow(uint256 _amount)public solvent{
         accrue();
