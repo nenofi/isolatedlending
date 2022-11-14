@@ -235,7 +235,15 @@ contract IsolatedLendingV01 is ERC4626{
         }
     }
 
-    
+    function borrowSharesToAmount(uint256 _shares) public view returns(uint256 amount){
+        uint pricePerShare;
+        if(totalBorrowShares ==0){
+            amount = 1e18;
+        } else{
+            amount = _shares*(totalBorrow*1e18/totalBorrowShares);
+        }
+    }
+
     function getPricePerShare() public view returns (uint256){
         return totalBorrowShares == 0 ? 1e18 : (totalBorrow*1e18)/totalBorrowShares;
     }
