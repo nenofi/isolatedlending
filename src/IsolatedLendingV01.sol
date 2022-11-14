@@ -149,6 +149,7 @@ contract IsolatedLendingV01 is ERC4626{
     }
 
     function liquidate(address _user, uint256 _amount) public {
+        accrue();
         if(!isSolvent(_user)){
             uint256 amountToRepay = totalAmountBorrowed(_user)-(userCollateralAmount[_user]*exchangeRate/1e6);
             // console.log(amountToRepay);
@@ -186,11 +187,11 @@ contract IsolatedLendingV01 is ERC4626{
     function removeCollateral(uint256 _amount) public solvent {
         // accrue must be called because we check solvency
         accrue();
+
         userCollateralAmount[msg.sender] -= _amount;
         totalCollateralAmount -= _amount;
         collateral.transferFrom(address(this), msg.sender, _amount);
     }
-
 
     function borrow(uint256 _amount)public solvent{
         accrue();
