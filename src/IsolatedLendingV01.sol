@@ -27,7 +27,7 @@ contract IsolatedLendingV01 is ERC4626{
 
     //user balances
     mapping(address => uint256) public userCollateralAmount;
-    mapping(address => uint256) public userCollateralShare;
+    // mapping(address => uint256) public userCollateralShare; UNUSED at the moment
 
     // userAssetFraction is called balanceOf for ERC20 compatibility (it's in ERC20.sol)
     // mapping(address => uint256) public userBorrowAmount;
@@ -137,8 +137,8 @@ contract IsolatedLendingV01 is ERC4626{
         uint256 collateralAmount = userCollateralAmount[_user];
         if (collateralAmount == 0) return false;
 
-        console.log(collateralAmount*75/100);
-        console.log(totalAmountBorrowed(_user)*1e6/exchangeRate);
+        // console.log(collateralAmount*75/100);
+        // console.log(totalAmountBorrowed(_user)*1e6/exchangeRate);
 
         return collateralAmount*75/100 >= totalAmountBorrowed(_user)*1e6/exchangeRate;
     }
@@ -235,16 +235,22 @@ contract IsolatedLendingV01 is ERC4626{
         }
     }
 
+
+    // NEEDS FIXING: is precision a problem? in this case 1e18
     function borrowSharesToAmount(uint256 _shares) public view returns(uint256 amount){
         uint pricePerShare;
         if(totalBorrowShares ==0){
             amount = 1e18;
         } else{
-            amount = _shares*(totalBorrow*1e18/totalBorrowShares);
+            amount = _shares*(totalBorrow*1e18/totalBorrowShares)/1e18;
         }
     }
 
     function getPricePerShare() public view returns (uint256){
         return totalBorrowShares == 0 ? 1e18 : (totalBorrow*1e18)/totalBorrowShares;
+    }
+
+    function getInterestPerSecond() external view returns (uint64){
+        return accrueInfo.interestPerSecond;
     }
 }
