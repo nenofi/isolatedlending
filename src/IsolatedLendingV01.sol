@@ -81,6 +81,7 @@ contract IsolatedLendingV01 is ERC4626{
         exchangeRate = 15000e18;
     }
 
+    // needs rework
     function totalAssets() public override view virtual returns (uint256){
         return asset.balanceOf(address(this));
     }
