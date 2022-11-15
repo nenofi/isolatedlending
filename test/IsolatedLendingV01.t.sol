@@ -30,6 +30,7 @@ contract IsolatedLendingV01Test is Test {
 
         vm.startPrank(Alice);
         wBTC.mint(1e18);
+        usdt.mint(50000e6);
         vm.stopPrank();
 
         vm.startPrank(Charlie);
@@ -67,7 +68,11 @@ contract IsolatedLendingV01Test is Test {
         isolatedLending.borrow(8000e6);
         vm.stopPrank();
         assertEq(isolatedLending.userCollateralAmount(address(Alice)), 1e18);
-        assertEq(usdt.balanceOf(address(Alice)), 8000e6);
+        assertEq(usdt.balanceOf(address(Alice)), 58000e6);
+        // assertEq(isolatedLending.totalBorrow(), 8004e6);
+
+
+
         // console.log(isolatedLending.totalBorrow());
         // console.log(isolatedLending.getInterestPerSecond());
         // vm.warp(block.timestamp + 10);
@@ -101,7 +106,7 @@ contract IsolatedLendingV01Test is Test {
         isolatedLending.borrow(8000e6);
         vm.stopPrank();
         assertEq(isolatedLending.userCollateralAmount(address(Alice)), 1e18);
-        assertEq(usdt.balanceOf(address(Alice)), 8000e6);
+        assertEq(usdt.balanceOf(address(Alice)), 58000e6);
 
         // console.log(isolatedLending.userBorrowShare(address(Alice)));
         // console.log(isolatedLending.totalAmountBorrowed(address(Alice)));
@@ -131,6 +136,30 @@ contract IsolatedLendingV01Test is Test {
         vm.expectRevert(bytes("NenoLend: user insolvent"));
         isolatedLending.borrow(8000e6);
         vm.stopPrank();
+    }
+
+    // TODO: totalassets == totalborrow, so asset depositor's shares won't be burned less than the value at the time they deposited their asset
+    //       - keep track of asset depositor's share with total borrow not assets available at isolatedLending
+    //       - override withdraw? or redo share counting? etc.
+    function testWithdrawAssetWhenBorrowed() public {
+        vm.startPrank(Bob);
+        usdt.approve(address(isolatedLending), 50000e6);
+        isolatedLending.addAsset(10000e6);
+        vm.stopPrank();
+        assertEq(isolatedLending.balanceOf(address(Bob)), 10000e6);
+
+        vm.startPrank(Alice);
+        wBTC.approve(address(isolatedLending), 1e18);
+        isolatedLending.addCollateral(1e18);
+        isolatedLending.borrow(8000e6);
+        vm.stopPrank();
+
+        vm.startPrank(Bob);
+        console.log(isolatedLending.maxWithdraw(address(Bob)));
+        isolatedLending.withdraw(isolatedLending.maxWithdraw(address(Bob)), address(Bob), address(Bob));
+        console.log(isolatedLending.balanceOf(address(Bob)));
+        
+
     }
 
 
