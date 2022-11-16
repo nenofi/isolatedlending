@@ -83,7 +83,7 @@ contract IsolatedLendingV01 is ERC4626{
 
     // needs rework
     function totalAssets() public override view virtual returns (uint256){
-        return asset.balanceOf(address(this));
+        return asset.balanceOf(address(this)) + totalBorrow; // + totalborrow?
     }
 
     function accrue() public{
@@ -108,7 +108,7 @@ contract IsolatedLendingV01 is ERC4626{
         extraAmount = totalBorrow * _accrueInfo.interestPerSecond * elapsedTime / 1e18;
         totalBorrow = totalBorrow + extraAmount;
 
-        uint256 utilization = totalBorrow*UTILIZATION_PRECISION / asset.balanceOf(address(this));
+        uint256 utilization = totalBorrow*UTILIZATION_PRECISION / totalAssets();//asset.balanceOf(address(this));
         if(utilization < MINIMUM_TARGET_UTILIZATION){
             uint256 underFactor = (MINIMUM_TARGET_UTILIZATION - utilization) * FACTOR_PRECISION / MINIMUM_TARGET_UTILIZATION;
             uint256 scale = INTEREST_ELASTICITY + (underFactor*underFactor*elapsedTime);
@@ -177,6 +177,11 @@ contract IsolatedLendingV01 is ERC4626{
     function addAsset(uint256 _amount)public returns (uint256 shares){
         accrue();
         shares = deposit(_amount, msg.sender);
+    }
+
+    function removeAsset(uint256 _amount) public returns (uint256 shares){
+        accrue();
+        shares = withdraw(_amount, msg.sender, msg.sender);
     }
 
     function addCollateral(uint256 _amount) public {
