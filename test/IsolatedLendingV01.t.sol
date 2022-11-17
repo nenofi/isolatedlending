@@ -29,6 +29,11 @@ contract IsolatedLendingV01Test is Test {
         usdt.mint(50000e6);
         vm.stopPrank();
 
+        vm.startPrank(Lender2);
+        neIDR.mint(100000000e18);
+        usdt.mint(100000e6);
+        vm.stopPrank();
+
         vm.startPrank(Borrower1);
         wBTC.mint(1e18);
         usdt.mint(50000e6);
@@ -180,41 +185,67 @@ contract IsolatedLendingV01Test is Test {
         isolatedLending.addCollateral(1e18);
         isolatedLending.borrow(8000e6);
         vm.stopPrank();
-        console.log(isolatedLending.totalBorrow()*1e18/isolatedLending.totalAssets());
-        console.log(isolatedLending.getInterestPerSecond());
-        vm.warp(block.timestamp + 100);
-        isolatedLending.accrue();
-        console.log(isolatedLending.totalAmountBorrowed(address(Borrower1)));
+        // console.log(isolatedLending.totalBorrow()*1e18/isolatedLending.totalAssets());
+        // console.log(isolatedLending.getInterestPerSecond());
+        // vm.warp(block.timestamp + 100);
+        // isolatedLending.accrue();
+        // console.log(isolatedLending.totalAmountBorrowed(address(Borrower1)));
 
         vm.startPrank(Lender1);
         isolatedLending.removeAsset(1000e6);
         // isolatedLending.withdraw(1000e6, address(Lender1), address(Lender1));
         vm.stopPrank();
         assertEq(usdt.balanceOf(address(Lender1)), 41000e6);
-        vm.warp(block.timestamp + 10000);
-        isolatedLending.accrue();
 
-        console.log(isolatedLending.totalBorrow()*1e18/isolatedLending.totalAssets());
-        console.log(isolatedLending.getInterestPerSecond());
-        console.log(isolatedLending.totalAmountBorrowed(address(Borrower1)));
+        // vm.warp(block.timestamp + 10000);
+        // isolatedLending.accrue();
 
-        vm.warp(block.timestamp + 100000);
-        isolatedLending.accrue();
+        // console.log(isolatedLending.totalBorrow()*1e18/isolatedLending.totalAssets());
+        // console.log(isolatedLending.getInterestPerSecond());
+        // console.log(isolatedLending.totalAmountBorrowed(address(Borrower1)));
 
-        console.log(isolatedLending.totalBorrow()*1e18/isolatedLending.totalAssets());
-        console.log(isolatedLending.getInterestPerSecond());
-        console.log(isolatedLending.totalAmountBorrowed(address(Borrower1)));
+        // vm.warp(block.timestamp + 100000);
+        // isolatedLending.accrue();
+
+        // console.log(isolatedLending.totalBorrow()*1e18/isolatedLending.totalAssets());
+        // console.log(isolatedLending.getInterestPerSecond());
+        // console.log(isolatedLending.totalAmountBorrowed(address(Borrower1)));
         
-        vm.warp(block.timestamp + 10000000);
-        isolatedLending.accrue();
+        // vm.warp(block.timestamp + 10000000);
+        // isolatedLending.accrue();
 
-        console.log(isolatedLending.totalBorrow()*1e18/isolatedLending.totalAssets());
-        console.log(isolatedLending.getInterestPerSecond());
-        console.log(isolatedLending.totalAmountBorrowed(address(Borrower1)));
-
-        
+        // console.log(isolatedLending.totalBorrow()*1e18/isolatedLending.totalAssets());
+        // console.log(isolatedLending.getInterestPerSecond());
+        // console.log(isolatedLending.totalAmountBorrowed(address(Borrower1)));
     }
 
+    function testMultipleAddAssets() public {
+        vm.startPrank(Lender1);
+        // console.log(isolatedLending.previewDeposit(50000e6));
+        usdt.approve(address(isolatedLending), 50000e6);
+        isolatedLending.addAsset(50000e6);
+        vm.stopPrank();
+        assertEq(isolatedLending.balanceOf(address(Lender1)), 50000e6);
+        // console.log(isolatedLending.totalAssets());
+
+        vm.startPrank(Lender2);
+        // console.log(isolatedLending.previewDeposit(100000e6));
+        // console.log(isolatedLending.convertToShares(100000e6));
+        usdt.approve(address(isolatedLending), 100000e6);
+        isolatedLending.addAsset(100000e6);
+        vm.stopPrank();
+        // console.log(isolatedLending.balanceOf(address(Lender1)));
+        // console.log(isolatedLending.balanceOf(address(Lender2)));
+
+        assertEq(isolatedLending.balanceOf(address(Lender2)), 100000e6);
+        // assertEq(isolatedLending.maxWithdraw(address(Lender1)), 50000e6);
+        // assertEq(isolatedLending.maxWithdraw(address(Lender2)), 100000e6);
+
+        // console.log(isolatedLending.totalAssets());
+        // console.log(isolatedLending.maxWithdraw(address(Lender1)));
+        // console.log(isolatedLending.maxWithdraw(address(Lender2)));
+
+    }
 
 
 

@@ -18,9 +18,11 @@ import "forge-std/console.sol";
 contract IsolatedLendingV01 is ERC4626{
 
     IERC20 public collateral;
-    uint256 public totalBorrow;
-    // uint256 public totalAsset;
-    uint256 public totalBorrowShares;
+    uint256 public totalBorrow; //amt of assets borrowed + interests by users
+    uint256 public totalAsset; //amt of assets deposited by users
+
+    uint256 public totalAssetShares;
+    uint256 public totalBorrowShares; //amt of borrow shares issued by this pool
     // Total amounts
     uint256 public totalCollateralAmount; // Total collateral supplied
     uint256 public totalCollateralShare;
@@ -83,7 +85,8 @@ contract IsolatedLendingV01 is ERC4626{
 
     // needs rework
     function totalAssets() public override view virtual returns (uint256){
-        return asset.balanceOf(address(this)) + totalBorrow; // + totalborrow?
+        return totalAsset + totalBorrow; // + totalborrow?
+        // return totalAsset + totalBorrow; // + totalborrow?
     }
 
     function accrue() public{
@@ -177,11 +180,15 @@ contract IsolatedLendingV01 is ERC4626{
     function addAsset(uint256 _amount)public returns (uint256 shares){
         accrue();
         shares = deposit(_amount, msg.sender);
+        totalAsset += _amount;
+
     }
 
     function removeAsset(uint256 _amount) public returns (uint256 shares){
         accrue();
         shares = withdraw(_amount, msg.sender, msg.sender);
+        totalAsset -= _amount;
+
     }
 
     function addCollateral(uint256 _amount) public {
@@ -214,6 +221,7 @@ contract IsolatedLendingV01 is ERC4626{
         }
         totalBorrowShares += shares;
         userBorrowShare[msg.sender] += shares;
+        totalAsset-= _amount;
         asset.transfer(msg.sender, _amount);
     }
 
