@@ -132,6 +132,7 @@ contract IsolatedLendingV01 is ERC4626{
         accrueInfo = _accrueInfo;
     }
 
+// TODO: EXCHANGE RATE for collateral amount
     function isSolvent(
         address _user
     ) public view returns (bool) {
@@ -143,8 +144,10 @@ contract IsolatedLendingV01 is ERC4626{
 
         // console.log(collateralAmount*75/100);
         // console.log(totalAmountBorrowed(_user)*1e6/exchangeRate);
-
-        return collateralAmount*75/100 >= totalAmountBorrowed(_user)*1e6/exchangeRate;
+        // bool x = collateralAmount*75/100 >= totalAmountBorrowed(_user)*1e6/exchangeRate;
+        // console.log(collateralAmount*exchangeRate/1e18*75/100);
+        // console.log(totalAmountBorrowed(_user)*1e12);
+        return collateralAmount*exchangeRate*75/100/1e18 >= totalAmountBorrowed(_user)*1e12;
     }
 
     modifier solvent() {
@@ -155,7 +158,7 @@ contract IsolatedLendingV01 is ERC4626{
     function liquidate(address _user, uint256 _amount) public {
         accrue();
         if(!isSolvent(_user)){
-            uint256 amountToRepay = totalAmountBorrowed(_user)-(userCollateralAmount[_user]*exchangeRate/1e6);
+            uint256 amountToRepay = totalAmountBorrowed(_user)-(userCollateralAmount[_user]*exchangeRate/1e18);
             // console.log(amountToRepay);
             // console.log(userCollateralAmount[_user]*exchangeRate/1e6);
             uint256 sharesToRepay = borrowAmountToShares(_amount);
@@ -173,8 +176,8 @@ contract IsolatedLendingV01 is ERC4626{
         }
     }
 
-    function updateExchangeRate() public {
-        exchangeRate = 15000e18;
+    function updateExchangeRate(uint256 _exchangeRate) public {
+        exchangeRate = _exchangeRate;
     }
 
     function addAsset(uint256 _amount)public returns (uint256 shares){

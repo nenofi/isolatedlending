@@ -113,6 +113,7 @@ contract IsolatedLendingV01Test is Test {
         vm.stopPrank();
         assertEq(isolatedLending.userCollateralAmount(address(Borrower1)), 1e18);
         assertEq(usdt.balanceOf(address(Borrower1)), 58000e6);
+        // console.log(isolatedLending.userCollateralAmount(address(Borrower1))*isolatedLending.exchangeRate()/1e18);
 
         // console.log(isolatedLending.userBorrowShare(address(Alice)));
         // console.log(isolatedLending.totalAmountBorrowed(address(Alice)));
@@ -125,6 +126,7 @@ contract IsolatedLendingV01Test is Test {
         vm.stopPrank();
         assertEq(isolatedLending.userCollateralAmount(address(Borrower2)), 5e17);
         assertEq(usdt.balanceOf(address(Borrower2)), 2000e6);
+        // console.log(isolatedLending.userCollateralAmount(address(Borrower2))*isolatedLending.exchangeRate()/1e18);
 
         // console.log(isolatedLending.userBorrowShare(address(Charlie)));
         // console.log(isolatedLending.totalAmountBorrowed(address(Charlie)));
@@ -247,6 +249,97 @@ contract IsolatedLendingV01Test is Test {
 
     }
 
+    function testExchangeRateInsolvency() public {
+        vm.startPrank(Lender1);
+        usdt.approve(address(isolatedLending), 50000e6);
+        isolatedLending.addAsset(50000e6);
+        vm.stopPrank();
+        assertEq(isolatedLending.balanceOf(address(Lender1)), 50000e6);
 
+        vm.startPrank(Borrower1);
+        wBTC.approve(address(isolatedLending), 1e18);
+        isolatedLending.addCollateral(1e18);
+        isolatedLending.borrow(11200e6);
+        vm.stopPrank();
+        assertEq(isolatedLending.isSolvent(Borrower1), true);
+
+        // console.log(isolatedLending.isSolvent(Borrower1));
+        // console.log(isolatedLending.userCollateralAmount(address(Borrower1))*isolatedLending.exchangeRate()*75/100/1e18);
+        isolatedLending.updateExchangeRate(14000e18);
+        assertEq(isolatedLending.isSolvent(Borrower1), false);
+
+        // console.log(isolatedLending.isSolvent(Borrower1));
+        // console.log(isolatedLending.userCollateralAmount(address(Borrower1))*isolatedLending.exchangeRate()*75/100/1e18);
+
+    }
+
+   function testInterestRateInsolvency() public {
+        vm.startPrank(Lender1);
+        usdt.approve(address(isolatedLending), 12000e6);
+        isolatedLending.addAsset(12000e6);
+        vm.stopPrank();
+        assertEq(isolatedLending.balanceOf(address(Lender1)), 12000e6);
+
+        vm.startPrank(Borrower1);
+        wBTC.approve(address(isolatedLending), 1e18);
+        isolatedLending.addCollateral(1e18);
+        isolatedLending.borrow(11200e6);
+        vm.stopPrank();
+        assertEq(isolatedLending.isSolvent(Borrower1), true);
+        // console.log(isolatedLending.totalAmountBorrowed(Borrower1));
+        // console.log(isolatedLending.isSolvent(Borrower1));
+        // console.log(block.timestamp);
+
+        vm.warp(block.timestamp+100);
+        isolatedLending.accrue();
+        vm.warp(block.timestamp+100000);
+        isolatedLending.accrue();
+        vm.warp(block.timestamp+1400000);
+        isolatedLending.accrue();
+        vm.warp(block.timestamp+250000);
+        isolatedLending.accrue();
+
+        assertEq(isolatedLending.isSolvent(Borrower1), false);
+        // console.log(isolatedLending.totalAmountBorrowed(Borrower1));
+        // console.log(isolatedLending.isSolvent(Borrower1));
+        // console.log(block.timestamp);
+
+
+    }
+
+
+//    function testBorrowMoreThanSupply() public {
+//         vm.startPrank(Lender1);
+//         usdt.approve(address(isolatedLending), 12000e6);
+//         isolatedLending.addAsset(12000e6);
+//         vm.stopPrank();
+//         assertEq(isolatedLending.balanceOf(address(Lender1)), 12000e6);
+
+//         vm.startPrank(Borrower1);
+//         wBTC.approve(address(isolatedLending), 1e18);
+//         isolatedLending.addCollateral(1e18);
+//         isolatedLending.borrow(11200e6);
+//         vm.stopPrank();
+//         assertEq(isolatedLending.isSolvent(Borrower1), true);
+//         // console.log(isolatedLending.userCollateralAmount(address(Borrower1))*isolatedLending.exchangeRate()/1e30*75/100);
+//         console.log(isolatedLending.totalAmountBorrowed(Borrower1));
+//         console.log(isolatedLending.isSolvent(Borrower1));
+//         console.log(block.timestamp);
+//         vm.warp(block.timestamp+10);
+//         isolatedLending.accrue();
+//         vm.warp(block.timestamp+100000);
+//         isolatedLending.accrue();
+//         vm.warp(block.timestamp+100000);
+//         isolatedLending.accrue();
+
+//         // assertEq(isolatedLending.isSolvent(Borrower1), false);
+
+//         console.log(isolatedLending.totalAmountBorrowed(Borrower1));
+//         console.log(isolatedLending.isSolvent(Borrower1));
+//         console.log(block.timestamp);
+
+//         // console.log(isolatedLending.userCollateralAmount(address(Borrower1))*isolatedLending.exchangeRate()*75/100/1e18);
+
+//     }
 
 }
