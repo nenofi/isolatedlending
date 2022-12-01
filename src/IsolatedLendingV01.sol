@@ -158,21 +158,26 @@ contract IsolatedLendingV01 is ERC4626{
     function liquidate(address _user, uint256 _amount) public {
         accrue();
         if(!isSolvent(_user)){
-            uint256 amountToRepay = totalAmountBorrowed(_user)-(userCollateralAmount[_user]*exchangeRate/1e18);
-            // console.log(amountToRepay);
-            // console.log(userCollateralAmount[_user]*exchangeRate/1e6);
+            // console.log("HERE");
+
             uint256 sharesToRepay = borrowAmountToShares(_amount);
-            // console.log(_amount/exchangeRate*1e12);
             userBorrowShare[_user] -= sharesToRepay;
             totalBorrowShares -= sharesToRepay;
             totalBorrow -= _amount;
 
-            asset.transferFrom(msg.sender, address(this), _amount);
-            uint256 collateralLiquidated = _amount/exchangeRate;
-            collateral.transfer(msg.sender, collateralLiquidated);
 
-            // amountToRepay = totalAmountBorrowed(_user)-(userCollateralAmount[_user]*exchangeRate/1e6); 
-            // console.log(amountToRepay);
+            // TODO bonus collateral for liquidators
+            asset.transferFrom(msg.sender, address(this), _amount);
+            uint256 collateralLiquidated = _amount*1e30/exchangeRate;
+            // console.log(collateralLiquidated);
+            // console.log(exchangeRate);
+            // console.log(_amount);
+            // console.log(userCollateralAmount[_user]);
+            userCollateralAmount [_user] -= collateralLiquidated;
+            collateral.transfer(msg.sender, collateralLiquidated);
+            // console.log(userCollateralAmount[_user]);
+// 0.999999714285714286 1e24
+// 0.714285714285714286 1e30
         }
     }
 
@@ -270,4 +275,14 @@ contract IsolatedLendingV01 is ERC4626{
     function getInterestPerSecond() external view returns (uint64){
         return accrueInfo.interestPerSecond;
     }
+
+    // NEEDS TO BE DIVIDED BY ASSET'S PRECISION/DECIMAL
+    function userCollateralValue(address _user) public view returns (uint256){
+        // return userCollateralAmount[_user]*exchangeRate/1e18;
+        return userCollateralAmount[_user]*exchangeRate/1e18;
+
+    }
+
+
+    
 }

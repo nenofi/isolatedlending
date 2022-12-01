@@ -16,6 +16,8 @@ contract IsolatedLendingV01Test is Test {
     address public Borrower2 = address(0x3);
     address public Lender1 = address(0x4);
     address public Lender2 = address(0x5);
+    address public Liquidator1 = address(0x6);
+    address public Liquidator2 = address(0x7);
 
     function setUp() public {
         neIDR = new MockERC20("neRupiah", "neIDR", 18);
@@ -41,6 +43,16 @@ contract IsolatedLendingV01Test is Test {
 
         vm.startPrank(Borrower2);
         wBTC.mint(5e17); //0.5 wbtc
+        vm.stopPrank();
+
+        vm.startPrank(Liquidator1);
+        neIDR.mint(100000000e18);
+        usdt.mint(50000e6);
+        vm.stopPrank();
+
+        vm.startPrank(Liquidator2);
+        neIDR.mint(100000000e18);
+        usdt.mint(100000e6);
         vm.stopPrank();
     }
 
@@ -166,9 +178,10 @@ contract IsolatedLendingV01Test is Test {
         // console.log(isolatedLending.balanceOf(address(Lender1)));
         // console.log(isolatedLending.maxWithdraw(address(Lender1)));
         // console.log(isolatedLending.totalAmountBorrowed(address(Borrower1)));
+        vm.expectRevert(abi.encodePacked("TRANSFER_FAILED"));
+
         isolatedLending.removeAsset(isolatedLending.maxWithdraw(address(Lender1)));
         // isolatedLending.withdraw(isolatedLending.maxWithdraw(address(Lender1)), address(Lender1), address(Lender1));
-        vm.expectRevert(abi.encodePacked("TRANSFER_FAILED"));
 
         vm.stopPrank();
         // console.log(isolatedLending.balanceOf(address(Lender1)));
@@ -308,38 +321,54 @@ contract IsolatedLendingV01Test is Test {
     }
 
 
-//    function testBorrowMoreThanSupply() public {
-//         vm.startPrank(Lender1);
-//         usdt.approve(address(isolatedLending), 12000e6);
-//         isolatedLending.addAsset(12000e6);
-//         vm.stopPrank();
-//         assertEq(isolatedLending.balanceOf(address(Lender1)), 12000e6);
+   function testBorrowMoreThanSupply() public {
+        vm.startPrank(Lender1);
+        usdt.approve(address(isolatedLending), 10000e6);
+        isolatedLending.addAsset(10000e6);
+        vm.stopPrank();
+        assertEq(isolatedLending.balanceOf(address(Lender1)), 10000e6);
 
-//         vm.startPrank(Borrower1);
-//         wBTC.approve(address(isolatedLending), 1e18);
-//         isolatedLending.addCollateral(1e18);
-//         isolatedLending.borrow(11200e6);
-//         vm.stopPrank();
-//         assertEq(isolatedLending.isSolvent(Borrower1), true);
-//         // console.log(isolatedLending.userCollateralAmount(address(Borrower1))*isolatedLending.exchangeRate()/1e30*75/100);
-//         console.log(isolatedLending.totalAmountBorrowed(Borrower1));
-//         console.log(isolatedLending.isSolvent(Borrower1));
-//         console.log(block.timestamp);
-//         vm.warp(block.timestamp+10);
-//         isolatedLending.accrue();
-//         vm.warp(block.timestamp+100000);
-//         isolatedLending.accrue();
-//         vm.warp(block.timestamp+100000);
-//         isolatedLending.accrue();
+        vm.startPrank(Borrower1);
+        wBTC.approve(address(isolatedLending), 1e18);
+        isolatedLending.addCollateral(1e18);
+        vm.expectRevert(bytes("Arithmetic over/underflow"));
+        isolatedLending.borrow(11200e6);
+        vm.stopPrank();
+        assertEq(isolatedLending.isSolvent(Borrower1), true);
 
-//         // assertEq(isolatedLending.isSolvent(Borrower1), false);
+    }
 
-//         console.log(isolatedLending.totalAmountBorrowed(Borrower1));
-//         console.log(isolatedLending.isSolvent(Borrower1));
-//         console.log(block.timestamp);
+    function testLiquidate() public {
+        vm.startPrank(Lender1);
+        usdt.approve(address(isolatedLending), 50000e6);
+        isolatedLending.addAsset(50000e6);
+        vm.stopPrank();
+        assertEq(isolatedLending.balanceOf(address(Lender1)), 50000e6);
 
-//         // console.log(isolatedLending.userCollateralAmount(address(Borrower1))*isolatedLending.exchangeRate()*75/100/1e18);
+        vm.startPrank(Borrower1);
+        wBTC.approve(address(isolatedLending), 1e18);
+        isolatedLending.addCollateral(1e18);
+        isolatedLending.borrow(11200e6);
+        vm.stopPrank();
+        assertEq(isolatedLending.isSolvent(Borrower1), true);
 
-//     }
+        isolatedLending.updateExchangeRate(14000e18);
+        assertEq(isolatedLending.isSolvent(Borrower1), false);
+        console.log(isolatedLending.isSolvent(Borrower1));
+
+        // console.log(isolatedLending.isSolvent(address(Borrower1)));
+        // console.log(isolatedLending.totalAmountBorrowed(address(Borrower1)));
+        // console.log(isolatedLending.userCollateralValue(address(Borrower1))/1e12*75/100);
+        vm.startPrank(Liquidator1);
+        usdt.approve(address(isolatedLending), 50000e6);
+        isolatedLending.liquidate(address(Borrower1), 4000e6);
+        vm.stopPrank();
+
+        console.log(wBTC.balanceOf(Liquidator1));
+        console.log(isolatedLending.isSolvent(Borrower1));
+        assertEq(isolatedLending.isSolvent(Borrower1), true);
+
+
+    }
 
 }
