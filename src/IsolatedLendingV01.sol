@@ -157,6 +157,8 @@ contract IsolatedLendingV01 is ERC4626{
 
     function liquidate(address _user, uint256 _amount) public {
         accrue();
+        // console.log(totalAmountBorrowed(_user)/2);
+        require(_amount <= totalAmountBorrowed(_user)/2, "NenoLend: liquidation amount is too high");
         if(!isSolvent(_user)){
             // console.log("HERE");
 
@@ -170,6 +172,10 @@ contract IsolatedLendingV01 is ERC4626{
             asset.transferFrom(msg.sender, address(this), _amount);
             uint256 collateralLiquidated = _amount*1e30/exchangeRate;
             // console.log(collateralLiquidated);
+            uint256 bonus = collateralLiquidated * 5/100;
+            // console.log(bonus);
+            collateralLiquidated = collateralLiquidated + bonus;
+            // console.log(collateralLiquidated);
             // console.log(exchangeRate);
             // console.log(_amount);
             // console.log(userCollateralAmount[_user]);
@@ -178,6 +184,7 @@ contract IsolatedLendingV01 is ERC4626{
             // console.log(userCollateralAmount[_user]);
 // 0.999999714285714286 1e24
 // 0.714285714285714286 1e30
+// 0.700000000000000001
         }
     }
 

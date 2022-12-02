@@ -354,7 +354,7 @@ contract IsolatedLendingV01Test is Test {
 
         isolatedLending.updateExchangeRate(14000e18);
         assertEq(isolatedLending.isSolvent(Borrower1), false);
-        console.log(isolatedLending.isSolvent(Borrower1));
+        // console.log(isolatedLending.isSolvent(Borrower1));
 
         // console.log(isolatedLending.isSolvent(address(Borrower1)));
         // console.log(isolatedLending.totalAmountBorrowed(address(Borrower1)));
@@ -365,9 +365,8 @@ contract IsolatedLendingV01Test is Test {
         vm.stopPrank();
 
         console.log(wBTC.balanceOf(Liquidator1));
-        console.log(isolatedLending.isSolvent(Borrower1));
+        console.log(isolatedLending.userCollateralAmount(Borrower1));
         assertEq(isolatedLending.isSolvent(Borrower1), true);
-
 
     }
 
