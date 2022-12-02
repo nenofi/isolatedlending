@@ -12,12 +12,14 @@ pragma solidity ^0.8.16;
 
 import "solmate/mixins/ERC4626.sol";
 import "./interface/IERC20.sol";
+import "./interface/AggregatorV3Interface.sol";
 import "forge-std/console.sol";
 
 
 contract IsolatedLendingV01 is ERC4626{
 
     IERC20 public collateral;
+    AggregatorV3Interface public priceFeed;
     uint256 public totalBorrow; //amt of assets borrowed + interests by users
     uint256 public totalAsset; //amt of assets deposited by users
 
@@ -80,7 +82,9 @@ contract IsolatedLendingV01 is ERC4626{
     constructor(ERC20 _asset, address _collateral, string memory _name, string memory _symbol)ERC4626(_asset, _name, _symbol){
         collateral = IERC20(_collateral);
         accrueInfo.interestPerSecond = STARTING_INTEREST_PER_SECOND;
+        priceFeed = AggregatorV3Interface(0x8e94C22142F4A64b99022ccDd994f4e9EC86E4B4);
         exchangeRate = 15000e18;
+        // exchangeRate = priceFeed.latestAnswer();
     }
 
     // needs rework

@@ -62,6 +62,7 @@ contract IsolatedLendingV01Test is Test {
         isolatedLending.addAsset(50000e6);
         vm.stopPrank();
         assertEq(isolatedLending.balanceOf(address(Lender1)), 50000e6);
+        console.log(isolatedLending.exchangeRate());
     }
 
     function testAddCollateral() public {
