@@ -83,7 +83,7 @@ contract IsolatedLendingV01 is ERC4626{
         collateral = IERC20(_collateral);
         accrueInfo.interestPerSecond = STARTING_INTEREST_PER_SECOND;
         priceFeed = AggregatorV3Interface(0x8e94C22142F4A64b99022ccDd994f4e9EC86E4B4);
-        exchangeRate = 15000e18;
+        exchangeRate = 15000e8;
         // exchangeRate = priceFeed.latestAnswer();
     }
 
@@ -136,7 +136,9 @@ contract IsolatedLendingV01 is ERC4626{
         accrueInfo = _accrueInfo;
     }
 
-// TODO: EXCHANGE RATE for collateral amount
+// TODO: precision counting between assets and collateral
+// *1e8 is the collateral's decimals
+// *1e2 is collaterall's decimals - asset's decimals i.e. (1e8-1e6)
     function isSolvent(
         address _user
     ) public view returns (bool) {
@@ -149,9 +151,12 @@ contract IsolatedLendingV01 is ERC4626{
         // console.log(collateralAmount*75/100);
         // console.log(totalAmountBorrowed(_user)*1e6/exchangeRate);
         // bool x = collateralAmount*75/100 >= totalAmountBorrowed(_user)*1e6/exchangeRate;
-        // console.log(collateralAmount*exchangeRate/1e18*75/100);
-        // console.log(totalAmountBorrowed(_user)*1e12);
-        return collateralAmount*exchangeRate*75/100/1e18 >= totalAmountBorrowed(_user)*1e12;
+        // console.log(collateralAmount*exchangeRate/1e8);
+        // console.log(totalAmountBorrowed(_user)*1e2);
+        return collateralAmount*exchangeRate/1e8*75/100 >= totalAmountBorrowed(_user)*1e2;
+        // return collateralAmount*exchangeRate*1e10*75/100/1e18 >= totalAmountBorrowed(_user)*1e8;
+        // 8004000000
+        
     }
 
     modifier solvent() {
@@ -287,13 +292,10 @@ contract IsolatedLendingV01 is ERC4626{
         return accrueInfo.interestPerSecond;
     }
 
-    // NEEDS TO BE DIVIDED BY ASSET'S PRECISION/DECIMAL
+    // TODO NEEDS TO BE DIVIDED BY ASSET'S PRECISION/DECIMAL use oracles precision or 1e18 or asset's precision (usdt 1e6)??
     function userCollateralValue(address _user) public view returns (uint256){
-        // return userCollateralAmount[_user]*exchangeRate/1e18;
-        return userCollateralAmount[_user]*exchangeRate/1e18;
+        // return userCollateralAmount[_user]*exchangeRate/1e18; -> 1e8
+        return userCollateralAmount[_user]*exchangeRate*1e10/1e18; // -> 1e18
 
     }
-
-
-    
 }
