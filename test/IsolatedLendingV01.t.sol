@@ -345,6 +345,10 @@ contract IsolatedLendingV01Test is Test {
         isolatedLending.accrue();
         vm.warp(block.timestamp+10518975);
         isolatedLending.accrue();
+        isolatedLending.withdrawFees();
+
+
+        console.log("Owner's Balance: %s", isolatedLending.balanceOf(address(this)));
 
 
 

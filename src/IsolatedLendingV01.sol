@@ -18,6 +18,8 @@ import "forge-std/console.sol";
 
 contract IsolatedLendingV01 is ERC4626{
 
+    address public feeTo;
+
     IERC20 public collateral;
     AggregatorV3Interface public priceFeed;
     uint256 public totalBorrow; //amt of assets borrowed + interests by users
@@ -84,6 +86,7 @@ contract IsolatedLendingV01 is ERC4626{
         accrueInfo.interestPerSecond = STARTING_INTEREST_PER_SECOND;
         priceFeed = AggregatorV3Interface(0x8e94C22142F4A64b99022ccDd994f4e9EC86E4B4);
         exchangeRate = 15000e8;
+        feeTo = msg.sender;
         // exchangeRate = priceFeed.latestAnswer();
     }
 
@@ -108,12 +111,22 @@ contract IsolatedLendingV01 is ERC4626{
             accrueInfo = _accrueInfo;
             return;
         }
-
         uint256 extraAmount = 0;
         uint256 feeFraction = 0;
 
+        // extraAmount = totalBorrow * _accrueInfo.interestPerSecond * elapsedTime / 1e18;
+        // totalBorrow = totalBorrow + extraAmount;
+        console.log("total Assets before: %s", totalAssets());
+
         extraAmount = totalBorrow * _accrueInfo.interestPerSecond * elapsedTime / 1e18;
         totalBorrow = totalBorrow + extraAmount;
+
+        uint256 feeAmount = extraAmount*PROTOCOL_FEE / PROTOCOL_FEE_DIVISOR;
+        console.log("fee amount: %s", feeAmount);
+        console.log("extra amount: %s", extraAmount);
+        feeFraction = borrowAmountToShares(feeAmount);
+        _accrueInfo.feesEarnedFraction = _accrueInfo.feesEarnedFraction + feeFraction;
+        console.log("total Assets after: %s", totalAssets());
 
         uint256 utilization = totalBorrow*UTILIZATION_PRECISION / totalAssets();//asset.balanceOf(address(this));
         // console.log("utilization:%s", utilization);
@@ -140,6 +153,18 @@ contract IsolatedLendingV01 is ERC4626{
         console.log("interestPerSecond(FINAL):%s", _accrueInfo.interestPerSecond);
 
     }
+
+    function withdrawFees() public {
+        accrue();
+        address _feeTo = feeTo;
+        uint256 _feesEarnedFraction = accrueInfo.feesEarnedFraction;
+        balanceOf[_feeTo] = balanceOf[_feeTo] + _feesEarnedFraction;
+        // emit Transfer(address(0), _feeTo, _feesEarnedFraction);
+        accrueInfo.feesEarnedFraction = 0;
+
+        // emit LogWithdrawFees(_feeTo, _feesEarnedFraction);
+    }
+
 
 // TODO: precision counting between assets and collateral
 // *1e8 is the collateral's decimals
