@@ -67,7 +67,7 @@ contract IsolatedLendingV01 is ERC4626{
     uint64 private constant MINIMUM_INTEREST_PER_SECOND = 79274480; // approx 0.25% APR
     uint64 private constant MAXIMUM_INTEREST_PER_SECOND = 317097920000; // approx 1000% APR
     uint256 private constant INTEREST_ELASTICITY = 28800e36; // Half or double in 28800 seconds (8 hours) if linear
-
+    
     uint256 private constant EXCHANGE_RATE_PRECISION = 1e18;
 
     uint256 private constant LIQUIDATION_MULTIPLIER = 112000; // add 12%
@@ -116,6 +116,7 @@ contract IsolatedLendingV01 is ERC4626{
         totalBorrow = totalBorrow + extraAmount;
 
         uint256 utilization = totalBorrow*UTILIZATION_PRECISION / totalAssets();//asset.balanceOf(address(this));
+        // console.log("utilization:%s", utilization);
         if(utilization < MINIMUM_TARGET_UTILIZATION){
             uint256 underFactor = (MINIMUM_TARGET_UTILIZATION - utilization) * FACTOR_PRECISION / MINIMUM_TARGET_UTILIZATION;
             uint256 scale = INTEREST_ELASTICITY + (underFactor*underFactor*elapsedTime);
@@ -123,6 +124,7 @@ contract IsolatedLendingV01 is ERC4626{
             if (_accrueInfo.interestPerSecond < MINIMUM_INTEREST_PER_SECOND) {
                 _accrueInfo.interestPerSecond = MINIMUM_INTEREST_PER_SECOND; // 0.25% APR minimum
             }
+            // console.log("interestPerSecond(MIN_UTIL):%s", _accrueInfo.interestPerSecond);
         } else if (utilization > MAXIMUM_TARGET_UTILIZATION) {
             uint256 overFactor = (utilization - MAXIMUM_TARGET_UTILIZATION) * FACTOR_PRECISION / FULL_UTILIZATION_MINUS_MAX;
             uint256 scale = INTEREST_ELASTICITY+(overFactor*overFactor*elapsedTime);
@@ -131,9 +133,12 @@ contract IsolatedLendingV01 is ERC4626{
                 newInterestPerSecond = MAXIMUM_INTEREST_PER_SECOND; // 1000% APR maximum
             }
             _accrueInfo.interestPerSecond = uint64(newInterestPerSecond);
+            // console.log("interestPerSecond(MAX_UTIL):%s", _accrueInfo.interestPerSecond);
         }
 
         accrueInfo = _accrueInfo;
+        console.log("interestPerSecond(FINAL):%s", _accrueInfo.interestPerSecond);
+
     }
 
 // TODO: precision counting between assets and collateral

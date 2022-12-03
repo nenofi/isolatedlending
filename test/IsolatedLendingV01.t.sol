@@ -116,6 +116,10 @@ contract IsolatedLendingV01Test is Test {
 
     }
 
+    // TODO add test multiple Lender and repayments
+    // to count APY for each user, we must take into account their shares of borrow/supply
+    // see: https://docs.solend.fi/getting-started/supply-and-borrow-apy
+
     function testBorrowWithoutCollateral() public {
         vm.startPrank(Lender1);
         usdt.approve(address(isolatedLending), 50000e6);
@@ -323,25 +327,34 @@ contract IsolatedLendingV01Test is Test {
         vm.startPrank(Borrower1);
         wBTC.approve(address(isolatedLending), 1e8);
         isolatedLending.addCollateral(1e8);
-        isolatedLending.borrow(7500e6);
+        isolatedLending.borrow(8000e6);
         vm.stopPrank();
         assertEq(isolatedLending.isSolvent(Borrower1), true);
-        console.log(isolatedLending.totalAmountBorrowed(address(Borrower1)));
+        console.log("Borrower 1: %s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
 
-        // vm.warp(block.timestamp+100000);
-        // isolatedLending.accrue();
-        // vm.warp(block.timestamp+100000);
-        // isolatedLending.accrue();
-
-        vm.warp(block.timestamp+31556926);
+        vm.warp(block.timestamp+10518975);
         isolatedLending.accrue();
-        // vm.warp(block.timestamp+250000);
+        vm.warp(block.timestamp+10518975);
+        isolatedLending.accrue();
+        vm.warp(block.timestamp+10518975);
+        isolatedLending.accrue();
+
+        vm.warp(block.timestamp+10518975);
+        isolatedLending.accrue();
+        vm.warp(block.timestamp+10518975);
+        isolatedLending.accrue();
+        vm.warp(block.timestamp+10518975);
+        isolatedLending.accrue();
+
+
+
+
+        // vm.warp(block.timestamp+31556926);
         // isolatedLending.accrue();
-        console.log(isolatedLending.totalAmountBorrowed(address(Borrower1)));
 
-
-
-
+        //75% utilization 1% apy
+        //80% utilization 1% apy
+        console.log("Borrower 1: %s",isolatedLending.totalAmountBorrowed(address(Borrower1))); 
 
 
     }
