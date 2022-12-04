@@ -123,12 +123,13 @@ contract IsolatedLendingV01 is ERC4626{
         extraAmount = totalBorrow * _accrueInfo.interestPerSecond * elapsedTime / 1e18;
         totalBorrow = totalBorrow + extraAmount;
 
-        // uint256 feeAmount = extraAmount*PROTOCOL_FEE / PROTOCOL_FEE_DIVISOR;
+        uint256 feeAmount = extraAmount*PROTOCOL_FEE / PROTOCOL_FEE_DIVISOR;
         // uint256 shares = previewDeposit(feeAmount);
         // _mint(feeTo, shares);
         // console.log("fee amount: %s", feeAmount);
         // console.log("extra amount: %s", extraAmount);
-        // feeFraction = borrowAmountToShares(feeAmount);
+        feeFraction = borrowAmountToShares(feeAmount);
+        _mint(feeTo, feeFraction);
         // _accrueInfo.feesEarnedFraction = _accrueInfo.feesEarnedFraction + feeFraction;
         // console.log("total Assets after: %s", totalAssets());
 

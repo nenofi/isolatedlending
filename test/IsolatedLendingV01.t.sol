@@ -365,6 +365,9 @@ contract IsolatedLendingV01Test is Test {
         vm.stopPrank();
         
 
+        // isolatedLending.withdrawFees();
+        console.log("Owner's Balance: %s", isolatedLending.balanceOf(address(this)));
+        isolatedLending.removeAsset(isolatedLending.maxWithdraw(address(this)));
 
         // isolatedLending.withdrawFees();
         vm.startPrank(Lender1);
