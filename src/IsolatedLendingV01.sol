@@ -93,8 +93,10 @@ contract IsolatedLendingV01 is ERC4626{
     // needs rework
     function totalAssets() public override view virtual returns (uint256){
         return totalAsset + totalBorrow; // + totalborrow?
+        // return asset.balanceOf(address(this)) + totalBorrow;
         // return totalAsset + totalBorrow; // + totalborrow?
     }
+
 
     function accrue() public{
         AccrueInfo memory _accrueInfo = accrueInfo;
@@ -116,17 +118,19 @@ contract IsolatedLendingV01 is ERC4626{
 
         // extraAmount = totalBorrow * _accrueInfo.interestPerSecond * elapsedTime / 1e18;
         // totalBorrow = totalBorrow + extraAmount;
-        console.log("total Assets before: %s", totalAssets());
+        // console.log("total Assets before: %s", totalAssets());
 
         extraAmount = totalBorrow * _accrueInfo.interestPerSecond * elapsedTime / 1e18;
         totalBorrow = totalBorrow + extraAmount;
 
-        uint256 feeAmount = extraAmount*PROTOCOL_FEE / PROTOCOL_FEE_DIVISOR;
-        console.log("fee amount: %s", feeAmount);
-        console.log("extra amount: %s", extraAmount);
-        feeFraction = borrowAmountToShares(feeAmount);
-        _accrueInfo.feesEarnedFraction = _accrueInfo.feesEarnedFraction + feeFraction;
-        console.log("total Assets after: %s", totalAssets());
+        // uint256 feeAmount = extraAmount*PROTOCOL_FEE / PROTOCOL_FEE_DIVISOR;
+        // uint256 shares = previewDeposit(feeAmount);
+        // _mint(feeTo, shares);
+        // console.log("fee amount: %s", feeAmount);
+        // console.log("extra amount: %s", extraAmount);
+        // feeFraction = borrowAmountToShares(feeAmount);
+        // _accrueInfo.feesEarnedFraction = _accrueInfo.feesEarnedFraction + feeFraction;
+        // console.log("total Assets after: %s", totalAssets());
 
         uint256 utilization = totalBorrow*UTILIZATION_PRECISION / totalAssets();//asset.balanceOf(address(this));
         // console.log("utilization:%s", utilization);
@@ -150,20 +154,20 @@ contract IsolatedLendingV01 is ERC4626{
         }
 
         accrueInfo = _accrueInfo;
-        console.log("interestPerSecond(FINAL):%s", _accrueInfo.interestPerSecond);
+        // console.log("interestPerSecond(FINAL):%s", _accrueInfo.interestPerSecond);
 
     }
 
-    function withdrawFees() public {
-        accrue();
-        address _feeTo = feeTo;
-        uint256 _feesEarnedFraction = accrueInfo.feesEarnedFraction;
-        balanceOf[_feeTo] = balanceOf[_feeTo] + _feesEarnedFraction;
-        // emit Transfer(address(0), _feeTo, _feesEarnedFraction);
-        accrueInfo.feesEarnedFraction = 0;
+    // function withdrawFees() public {
+    //     accrue();
+    //     address _feeTo = feeTo;
+    //     uint256 _feesEarnedFraction = accrueInfo.feesEarnedFraction;
+    //     balanceOf[_feeTo] = balanceOf[_feeTo] + _feesEarnedFraction;
+    //     // emit Transfer(address(0), _feeTo, _feesEarnedFraction);
+    //     accrueInfo.feesEarnedFraction = 0;
 
-        // emit LogWithdrawFees(_feeTo, _feesEarnedFraction);
-    }
+    //     // emit LogWithdrawFees(_feeTo, _feesEarnedFraction);
+    // }
 
 
 // TODO: precision counting between assets and collateral
@@ -240,9 +244,8 @@ contract IsolatedLendingV01 is ERC4626{
 
     function removeAsset(uint256 _amount) public returns (uint256 shares){
         accrue();
-        shares = withdraw(_amount, msg.sender, msg.sender);
-        totalAsset -= _amount;
-
+        shares = withdraw(_amount, msg.sender, msg.sender); //THIS DOESNT WORK WHEN COUNTING SHARES OF THE ERC4626, REDEEM() however works
+        totalAsset -= _amount; //THIS CAUSES OVERFLOW??
     }
 
     function addCollateral(uint256 _amount) public {
@@ -286,13 +289,15 @@ contract IsolatedLendingV01 is ERC4626{
 
     function repay(uint256 _amount) public {
         accrue();
-
+        // ADD ASSET??? WHERE IS?
         uint256 repaidShares = borrowAmountToShares(_amount);
         userBorrowShare[msg.sender] -= repaidShares;
         totalBorrowShares -= repaidShares;
         totalBorrow -= _amount;
 
         asset.transferFrom(msg.sender, address(this), _amount);
+        totalAsset += _amount;
+
     }
 
     function borrowAmountToShares(uint256 _amount) public view returns(uint256 shares){
