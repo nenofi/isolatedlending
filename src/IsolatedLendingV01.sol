@@ -336,7 +336,7 @@ contract IsolatedLendingV01 is ERC4626{
     // TODO NEEDS TO BE DIVIDED BY ASSET'S PRECISION/DECIMAL use oracles precision or 1e18 or asset's precision (usdt 1e6)??
     function userCollateralValue(address _user) public view returns (uint256){
         // return userCollateralAmount[_user]*exchangeRate/1e18; -> 1e8
-        return userCollateralAmount[_user]*exchangeRate*1e10/1e18; // -> 1e18
+        return userCollateralAmount[_user]*exchangeRate/1e8; // -> 1e8 (COLLATERAL's PRECISION)
 
     }
 }
