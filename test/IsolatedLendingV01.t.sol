@@ -330,11 +330,6 @@ contract IsolatedLendingV01Test is Test {
         isolatedLending.addAsset(10000e6);
         vm.stopPrank();
         assertEq(isolatedLending.balanceOf(address(Lender1)), 10000e6);
-        // console.log("Vault USDT Balance: %s", usdt.balanceOf(address(isolatedLending)));
-
-        // vm.startPrank(Lender2);
-        // usdt.transfer(address(isolatedLending), 1000e6);
-        // console.log("Vault USDT Balance: %s", usdt.balanceOf(address(isolatedLending)));
 
         vm.startPrank(Borrower1);
         wBTC.approve(address(isolatedLending), 1e8);
@@ -342,14 +337,6 @@ contract IsolatedLendingV01Test is Test {
         isolatedLending.borrow(8000e6);
         vm.stopPrank();
         assertEq(isolatedLending.isSolvent(Borrower1), true);
-        // console.log("Borrower 1: %s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
-
-        // vm.warp(block.timestamp+10518975);
-        // isolatedLending.accrue();
-        // vm.warp(block.timestamp+10518975);
-        // isolatedLending.accrue();
-        // vm.warp(block.timestamp+10518975);
-        // isolatedLending.accrue();
 
         vm.warp(block.timestamp+10518975);
         isolatedLending.accrue();
@@ -358,34 +345,19 @@ contract IsolatedLendingV01Test is Test {
         vm.warp(block.timestamp+10518975);
         isolatedLending.accrue();
 
-        console.log("Borrower 1: %s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
         vm.startPrank(Borrower1);
         usdt.approve(address(isolatedLending), 1000000e6);
         isolatedLending.repay(8084867235);
         vm.stopPrank();
-        
 
-        // isolatedLending.withdrawFees();
-        console.log("Owner's Balance: %s", isolatedLending.balanceOf(address(this)));
         isolatedLending.removeAsset(isolatedLending.maxWithdraw(address(this)));
 
-        // isolatedLending.withdrawFees();
         vm.startPrank(Lender1);
-        // console.log("Lender1 Vault Balance: %s", isolatedLending.balanceOf(address(Lender1)));
-        // console.log(isolatedLending.convertToAssets(10000000000));
-        // isolatedLending.removeAsset(10000e6);
-        // console.log("Lender1 USDT Balance: %s", usdt.balanceOf(address(Lender1)));
-        // console.log("Vault USDT Balance: %s", usdt.balanceOf(address(isolatedLending)));
-        console.log("max withdraw: %s", isolatedLending.maxWithdraw(address(Lender1)));
         isolatedLending.removeAsset(isolatedLending.maxWithdraw(address(Lender1)));
-        // isolatedLending.redeem(10000000000, address(Lender1), address(Lender1));
-        // isolatedLending.withdraw(11000000000, address(Lender1), address(Lender1));
-        // isolatedLending.removeAsset(11000000000);
-
-
-        console.log("Lender1 USDT Balance: %s", usdt.balanceOf(address(Lender1)));
-
         vm.stopPrank();
+
+        assertEq(usdt.balanceOf(address(Lender1)), 50076776933);
+        assertEq(usdt.balanceOf(address(this)), 8090302);
 
         // // console.log("Owner's Balance: %s", isolatedLending.balanceOf(address(this)));
         // // isolatedLending.redeem(16852738,address(this),address(this));

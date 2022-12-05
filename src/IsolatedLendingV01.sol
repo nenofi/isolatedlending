@@ -18,6 +18,18 @@ import "forge-std/console.sol";
 
 contract IsolatedLendingV01 is ERC4626{
 
+    event LogExchangeRate(uint256 rate);
+    event LogAccrue(uint256 accruedAmount, uint256 feeFraction, uint64 rate, uint256 utilization);
+    event LogAddCollateral(address indexed user, uint256 amount);
+    event LogAddAsset(address indexed user, uint256 amount, uint256 share);
+    event LogRemoveCollateral(address indexed user, uint256 amount);
+    event LogRemoveAsset(address indexed user, uint256 amount, uint256 share);
+    event LogBorrow(address indexed user, uint256 amount, uint256 feeAmount, uint256 share);
+    event LogRepay(address indexed from, address indexed to, uint256 amount, uint256 part);
+    event LogFeeTo(address indexed newFeeTo);
+    event LogWithdrawFees(address indexed feeTo, uint256 feesEarnedFraction);
+
+
     address public feeTo;
 
     IERC20 public collateral;
@@ -154,6 +166,7 @@ contract IsolatedLendingV01 is ERC4626{
             // console.log("interestPerSecond(MAX_UTIL):%s", _accrueInfo.interestPerSecond);
         }
 
+        emit LogAccrue(extraAmount, feeFraction, _accrueInfo.interestPerSecond, utilization);
         accrueInfo = _accrueInfo;
         // console.log("interestPerSecond(FINAL):%s", _accrueInfo.interestPerSecond);
 
@@ -183,15 +196,7 @@ contract IsolatedLendingV01 is ERC4626{
         uint256 collateralAmount = userCollateralAmount[_user];
         if (collateralAmount == 0) return false;
 
-        // console.log(collateralAmount*75/100);
-        // console.log(totalAmountBorrowed(_user)*1e6/exchangeRate);
-        // bool x = collateralAmount*75/100 >= totalAmountBorrowed(_user)*1e6/exchangeRate;
-        // console.log(collateralAmount*exchangeRate/1e8);
-        // console.log(totalAmountBorrowed(_user)*1e2);
-        return collateralAmount*exchangeRate/1e8*75/100 >= totalAmountBorrowed(_user)*1e2;
-        // return collateralAmount*exchangeRate*1e10*75/100/1e18 >= totalAmountBorrowed(_user)*1e8;
-        // 8004000000
-        
+        return collateralAmount*exchangeRate/1e8*75/100 >= totalAmountBorrowed(_user)*1e2; 
     }
 
     modifier solvent() {
@@ -214,32 +219,28 @@ contract IsolatedLendingV01 is ERC4626{
 
             // TODO bonus collateral for liquidators
             asset.transferFrom(msg.sender, address(this), _amount);
+            totalAsset += _amount;
+            
+            // CHECK PRECISION
             uint256 collateralLiquidated = _amount*1e30/exchangeRate;
-            // console.log(collateralLiquidated);
             uint256 bonus = collateralLiquidated * 5/100;
-            // console.log(bonus);
+
             collateralLiquidated = collateralLiquidated + bonus;
-            // console.log(collateralLiquidated);
-            // console.log(exchangeRate);
-            // console.log(_amount);
-            // console.log(userCollateralAmount[_user]);
             userCollateralAmount [_user] -= collateralLiquidated;
             collateral.transfer(msg.sender, collateralLiquidated);
-            // console.log(userCollateralAmount[_user]);
-// 0.999999714285714286 1e24
-// 0.714285714285714286 1e30
-// 0.700000000000000001
         }
     }
 
     function updateExchangeRate(uint256 _exchangeRate) public {
         exchangeRate = _exchangeRate;
+        emit LogExchangeRate(exchangeRate);
     }
 
     function addAsset(uint256 _amount)public returns (uint256 shares){
         accrue();
         shares = deposit(_amount, msg.sender);
         totalAsset += _amount;
+        emit LogAddAsset(msg.sender, _amount, shares);
 
     }
 
@@ -247,20 +248,22 @@ contract IsolatedLendingV01 is ERC4626{
         accrue();
         shares = withdraw(_amount, msg.sender, msg.sender); //THIS DOESNT WORK WHEN COUNTING SHARES OF THE ERC4626, REDEEM() however works
         totalAsset -= _amount; //THIS CAUSES OVERFLOW??
+        emit LogRemoveAsset(msg.sender, _amount, shares);
     }
 
     function addCollateral(uint256 _amount) public {
         userCollateralAmount[msg.sender] += userCollateralAmount[msg.sender] + _amount;
         totalCollateralAmount += totalCollateralAmount + _amount;
         collateral.transferFrom(msg.sender, address(this), _amount);
+        emit LogAddCollateral(msg.sender, _amount);
     }
 
     function removeCollateral(uint256 _amount) public solvent {
-        // accrue must be called because we check solvency
         accrue();
 
         userCollateralAmount[msg.sender] -= _amount;
         totalCollateralAmount -= _amount;
+        emit LogRemoveCollateral(msg.sender, _amount);
         collateral.transferFrom(address(this), msg.sender, _amount);
     }
 
@@ -279,6 +282,8 @@ contract IsolatedLendingV01 is ERC4626{
         }
         totalBorrowShares += shares;
         userBorrowShare[msg.sender] += shares;
+        emit LogBorrow(msg.sender, _amount, feeAmount, shares);
+
         totalAsset-= _amount;
         asset.transfer(msg.sender, _amount);
     }
@@ -290,7 +295,7 @@ contract IsolatedLendingV01 is ERC4626{
 
     function repay(uint256 _amount) public {
         accrue();
-        // ADD ASSET??? WHERE IS?
+
         uint256 repaidShares = borrowAmountToShares(_amount);
         userBorrowShare[msg.sender] -= repaidShares;
         totalBorrowShares -= repaidShares;
