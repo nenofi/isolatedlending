@@ -328,11 +328,17 @@ contract IsolatedLendingV01Test is Test {
         isolatedLending.updateExchangeRate(14000e8);
         assertEq(isolatedLending.isSolvent(Borrower1), false);
         assertEq(isolatedLending.isSolvent(Borrower2), false);
+        
+        vm.startPrank(Liquidator1);
+        usdt.approve(address(isolatedLending), 50000e6);
+        console.log(isolatedLending.userCollateralValue(address(Borrower1))*7500/10000);
+        console.log(isolatedLending.userCollateralValue(address(Borrower2))*7500/10000);
 
-        console.log(isolatedLending.userCollateralAmount(address(Borrower2)));
-        console.log(isolatedLending.exchangeRate());
-        console.log(isolatedLending.exchangeRate()*isolatedLending.userCollateralAmount(address(Borrower2)));
-        console.log(isolatedLending.userCollateralValue(address(Borrower2)));
+        isolatedLending.liquidate(Borrower1, 7000e6);
+        isolatedLending.liquidate(Borrower2, 3500e6);
+        console.log(wBTC.balanceOf(address(Liquidator1)));
+        vm.stopPrank();
+
     }
 
     // TODO add interest rate test
