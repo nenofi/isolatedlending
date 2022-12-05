@@ -40,7 +40,7 @@ contract IsolatedLendingV01 is ERC4626{
     uint256 public totalAssetShares;
     uint256 public totalBorrowShares; //amt of borrow shares issued by this pool
     // Total amounts
-    uint256 public totalCollateralAmount; // Total collateral supplied
+    uint256 public totalCollateral; // Total collateral supplied
     uint256 public totalCollateralShare;
 
     //user balances
@@ -196,7 +196,8 @@ contract IsolatedLendingV01 is ERC4626{
         uint256 collateralAmount = userCollateralAmount[_user];
         if (collateralAmount == 0) return false;
 
-        return collateralAmount*exchangeRate/1e8*75/100 >= totalAmountBorrowed(_user)*1e2; 
+        return userCollateralValue(_user)*CLOSED_COLLATERIZATION_RATE/COLLATERIZATION_RATE_PRECISION >= totalAmountBorrowed(_user);
+        // collateralAmount*exchangeRate/1e8*75/100 >= totalAmountBorrowed(_user)*1e2; 
     }
 
     modifier solvent() {
@@ -205,6 +206,7 @@ contract IsolatedLendingV01 is ERC4626{
     }
 
     function liquidate(address _user, uint256 _amount) public {
+        updateExchangeRate(14000e8);
         accrue();
         // console.log(totalAmountBorrowed(_user)/2);
         require(_amount <= totalAmountBorrowed(_user)/2, "NenoLend: liquidation amount is too high");
@@ -253,7 +255,7 @@ contract IsolatedLendingV01 is ERC4626{
 
     function addCollateral(uint256 _amount) public {
         userCollateralAmount[msg.sender] += userCollateralAmount[msg.sender] + _amount;
-        totalCollateralAmount += totalCollateralAmount + _amount;
+        totalCollateral += totalCollateral + _amount;
         collateral.transferFrom(msg.sender, address(this), _amount);
         emit LogAddCollateral(msg.sender, _amount);
     }
@@ -262,7 +264,7 @@ contract IsolatedLendingV01 is ERC4626{
         accrue();
 
         userCollateralAmount[msg.sender] -= _amount;
-        totalCollateralAmount -= _amount;
+        totalCollateral -= _amount;
         emit LogRemoveCollateral(msg.sender, _amount);
         collateral.transferFrom(address(this), msg.sender, _amount);
     }
@@ -335,8 +337,7 @@ contract IsolatedLendingV01 is ERC4626{
 
     // TODO NEEDS TO BE DIVIDED BY ASSET'S PRECISION/DECIMAL use oracles precision or 1e18 or asset's precision (usdt 1e6)??
     function userCollateralValue(address _user) public view returns (uint256){
-        // return userCollateralAmount[_user]*exchangeRate/1e18; -> 1e8
-        return userCollateralAmount[_user]*exchangeRate/1e8; // -> 1e8 (COLLATERAL's PRECISION)
-
+        // return userCollateralAmount[_user]*exchangeRate/1e18; -> 1e8(COLLATERAL's PRECISION)
+        return userCollateralAmount[_user]*exchangeRate/1e10; // -> why 1e10?
     }
 }
