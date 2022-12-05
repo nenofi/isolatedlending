@@ -331,13 +331,17 @@ contract IsolatedLendingV01Test is Test {
         
         vm.startPrank(Liquidator1);
         usdt.approve(address(isolatedLending), 50000e6);
-        console.log(isolatedLending.userCollateralValue(address(Borrower1))*7500/10000);
-        console.log(isolatedLending.userCollateralValue(address(Borrower2))*7500/10000);
 
-        isolatedLending.liquidate(Borrower1, 7000e6);
-        isolatedLending.liquidate(Borrower2, 3500e6);
-        console.log(wBTC.balanceOf(address(Liquidator1)));
+        isolatedLending.liquidate(Borrower1, 5600e6);
+        isolatedLending.liquidate(Borrower2, 2250e6);
         vm.stopPrank();
+
+        assertEq(wBTC.balanceOf(address(Liquidator1)), 60276785);
+        assertEq(isolatedLending.isSolvent(Borrower1), true);
+        assertEq(isolatedLending.isSolvent(Borrower2), true);
+
+
+
 
     }
 
@@ -375,8 +379,9 @@ contract IsolatedLendingV01Test is Test {
         isolatedLending.removeAsset(isolatedLending.maxWithdraw(address(Lender1)));
         vm.stopPrank();
 
-        assertEq(usdt.balanceOf(address(Lender1)), 50076776933);
-        assertEq(usdt.balanceOf(address(this)), 8090302);
+        assertEq(usdt.balanceOf(address(Lender1)), 50068699596);
+        assertEq(usdt.balanceOf(address(this)), 16167639);
+
 
         // // console.log("Owner's Balance: %s", isolatedLending.balanceOf(address(this)));
         // // isolatedLending.redeem(16852738,address(this),address(this));
