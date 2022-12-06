@@ -18,8 +18,6 @@ pragma solidity ^0.8.16;
 import "solmate/mixins/ERC4626.sol";
 import "./interface/IERC20.sol";
 import "./interface/AggregatorV3Interface.sol";
-import "forge-std/console.sol";
-
 
 contract IsolatedLendingV01 is ERC4626{
 
@@ -34,15 +32,15 @@ contract IsolatedLendingV01 is ERC4626{
     event LogFeeTo(address indexed newFeeTo);
     event LogWithdrawFees(address indexed feeTo, uint256 feesEarnedFraction);
 
-
+    address public admin;
     address public feeTo;
 
     IERC20 public collateral;
     AggregatorV3Interface public priceFeed;
+
     uint256 public totalBorrow; //amt of assets borrowed + interests by users
     uint256 public totalAsset; //amt of assets deposited by users
 
-    uint256 public totalAssetShares;
     uint256 public totalBorrowShares; //amt of borrow shares issued by this pool
     // Total amounts
     uint256 public totalCollateral; // Total collateral supplied
@@ -85,12 +83,26 @@ contract IsolatedLendingV01 is ERC4626{
     uint256 private constant BORROW_OPENING_FEE = 50; // 0.05%
     uint256 private constant BORROW_OPENING_FEE_PRECISION = 1e5;
 
-    constructor(ERC20 _asset, address _collateral, string memory _name, string memory _symbol)ERC4626(_asset, _name, _symbol){
+    constructor(address _asset, address _collateral, string memory _name, string memory _symbol)ERC4626(ERC20(_asset), _name, _symbol){
         collateral = IERC20(_collateral);
         accrueInfo.interestPerSecond = STARTING_INTEREST_PER_SECOND;
         priceFeed = AggregatorV3Interface(0x8e94C22142F4A64b99022ccDd994f4e9EC86E4B4);
-        exchangeRate = 15000e8;
+        exchangeRate = priceFeed.latestAnswer();
         feeTo = msg.sender;
+        admin = msg.sender;
+    }
+
+    modifier onlyAdmin {
+        require(msg.sender == admin, "NenoLend: not an admin");
+        _;
+    }
+
+    function setFeeTo(address _feeTo) public onlyAdmin{
+        feeTo = _feeTo;
+    }
+
+    function setAdmin(address _admin) public onlyAdmin{
+        admin = _admin;
     }
 
     function totalAssets() public override view virtual returns (uint256){
@@ -122,7 +134,7 @@ contract IsolatedLendingV01 is ERC4626{
         feeFraction = borrowAmountToShares(feeAmount);
         _mint(feeTo, feeFraction);
 
-        uint256 utilization = totalBorrow*UTILIZATION_PRECISION / totalAssets();//asset.balanceOf(address(this));
+        uint256 utilization = totalBorrow*UTILIZATION_PRECISION / totalAssets();
         if(utilization < MINIMUM_TARGET_UTILIZATION){
             uint256 underFactor = (MINIMUM_TARGET_UTILIZATION - utilization) * FACTOR_PRECISION / MINIMUM_TARGET_UTILIZATION;
             uint256 scale = INTEREST_ELASTICITY + (underFactor*underFactor*elapsedTime);
@@ -162,7 +174,7 @@ contract IsolatedLendingV01 is ERC4626{
     }
 
     function liquidate(address _user, uint256 _amount) public {
-        updateExchangeRate(14000e8);
+        updateExchangeRate();
         accrue();
         require(_amount <= totalAmountBorrowed(_user)/2, "NenoLend: liquidation amount is too high");
         
@@ -186,8 +198,8 @@ contract IsolatedLendingV01 is ERC4626{
         }
     }
 
-    function updateExchangeRate(uint256 _exchangeRate) public {
-        exchangeRate = _exchangeRate;
+    function updateExchangeRate() public {
+        exchangeRate = priceFeed.latestAnswer();
         emit LogExchangeRate(exchangeRate);
     }
 
@@ -201,8 +213,8 @@ contract IsolatedLendingV01 is ERC4626{
 
     function removeAsset(uint256 _amount) public returns (uint256 shares){
         accrue();
-        shares = withdraw(_amount, msg.sender, msg.sender); //THIS DOESNT WORK WHEN COUNTING SHARES OF THE ERC4626, REDEEM() however works
-        totalAsset -= _amount; //THIS CAUSES OVERFLOW??
+        shares = withdraw(_amount, msg.sender, msg.sender);
+        totalAsset -= _amount; 
         emit LogRemoveAsset(msg.sender, _amount, shares);
     }
 
