@@ -36,7 +36,8 @@ contract IsolatedLendingV01 is ERC4626{
     address public feeTo;
 
     IERC20 public collateral;
-    AggregatorV3Interface public priceFeed;
+    AggregatorV3Interface public priceFeedCollateral;
+    AggregatorV3Interface public priceFeedAsset;
 
     uint256 public totalBorrow; //amt of assets borrowed + interests by users
     uint256 public totalAsset; //amt of assets deposited by users
@@ -86,8 +87,9 @@ contract IsolatedLendingV01 is ERC4626{
     constructor(address _asset, address _collateral, string memory _name, string memory _symbol)ERC4626(ERC20(_asset), _name, _symbol){
         collateral = IERC20(_collateral);
         accrueInfo.interestPerSecond = STARTING_INTEREST_PER_SECOND;
-        priceFeed = AggregatorV3Interface(0x8e94C22142F4A64b99022ccDd994f4e9EC86E4B4);
-        exchangeRate = priceFeed.latestAnswer();
+        priceFeedCollateral = AggregatorV3Interface(0x8e94C22142F4A64b99022ccDd994f4e9EC86E4B4);
+        priceFeedAsset = AggregatorV3Interface(0x2553f4eeb82d5A26427b8d1106C51499CBa5D99c);
+        exchangeRate = priceFeedCollateral.latestAnswer()*1e8/priceFeedAsset.latestAnswer();
         feeTo = msg.sender;
         admin = msg.sender;
     }
@@ -187,7 +189,7 @@ contract IsolatedLendingV01 is ERC4626{
             asset.transferFrom(msg.sender, address(this), _amount);
             totalAsset += _amount;
 
-            uint256 collateralLiquidated = _amount*1e10/exchangeRate;
+            uint256 collateralLiquidated = _amount*1e10/exchangeRate; //1e6*1e10/1e8 = 1e8 (wbtc decimals)
             uint256 bonus = collateralLiquidated * 750/10000;
             collateralLiquidated = collateralLiquidated + bonus;
 
@@ -198,8 +200,16 @@ contract IsolatedLendingV01 is ERC4626{
         }
     }
 
-    function updateExchangeRate() public {
-        exchangeRate = priceFeed.latestAnswer();
+    function getCollateralPrice() internal view returns (uint256 collateralPrice){
+        return priceFeedCollateral.latestAnswer();
+    }
+
+    function getAssetPrice() internal view returns (uint256 collateralPrice){
+        return priceFeedAsset.latestAnswer();
+    }
+
+    function updateExchangeRate() public{
+        exchangeRate = priceFeedCollateral.latestAnswer()*1e8/priceFeedAsset.latestAnswer();
         emit LogExchangeRate(exchangeRate);
     }
 
@@ -299,6 +309,6 @@ contract IsolatedLendingV01 is ERC4626{
     }
 
     function userCollateralValue(address _user) public view returns (uint256){
-        return userCollateralAmount[_user]*exchangeRate/1e10; 
+        return userCollateralAmount[_user]*exchangeRate/1e10; //1e8*1e8/1e10 = 1e6 (usdc decimals)
     }
 }

@@ -77,6 +77,16 @@ contract IsolatedLendingV01Test is Test {
 
     }
 
+    function testexchangeRate() public{
+        // isolatedLending.updateExchangeRate();
+        // console.log("WBTC/USDC: %s", isolatedLending.exchangeRate());
+        // console.log("USDC/USD: %s", isolatedLending.getAssetPrice());
+        // console.log("WBTC/USD: %s", isolatedLending.getCollateralPrice());
+        // console.log("WBTC/USDC (manual): %s", isolatedLending.getCollateralPrice()*1e8/isolatedLending.getAssetPrice());
+        // assertEq(isolatedLending.exchangeRate(), isolatedLending.getCollateralPrice()*1e8/isolatedLending.getAssetPrice());
+        isolatedLending.updateExchangeRate();
+    }
+
     function testAddAndRemoveAsset() public {
         vm.startPrank(Lender1);
         usdt.approve(address(isolatedLending), 50000e6);
@@ -342,7 +352,6 @@ contract IsolatedLendingV01Test is Test {
         
     //     vm.startPrank(Liquidator1);
     //     usdt.approve(address(isolatedLending), 50000e6);
-
     //     isolatedLending.liquidate(Borrower1, 5600e6);
     //     isolatedLending.liquidate(Borrower2, 2250e6);
     //     vm.stopPrank();
