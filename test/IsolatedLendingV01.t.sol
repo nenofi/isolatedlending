@@ -43,6 +43,7 @@ contract IsolatedLendingV01Test is Test {
 
         vm.startPrank(Borrower2);
         wBTC.mint(5e7); //0.5 wbtc
+        usdt.mint(50000e6);
         vm.stopPrank();
 
         vm.startPrank(Liquidator1);
@@ -135,6 +136,8 @@ contract IsolatedLendingV01Test is Test {
         vm.stopPrank();
         assertEq(isolatedLending.balanceOf(address(Lender1)), 50000e6);
 
+        uint256 startingTotalAssets = isolatedLending.totalAssets();
+
         vm.startPrank(Borrower1);
         wBTC.approve(address(isolatedLending), 1e18);
         isolatedLending.addCollateral(1e8);
@@ -149,7 +152,7 @@ contract IsolatedLendingV01Test is Test {
         isolatedLending.borrow(2000e6);
         vm.stopPrank();
         assertEq(isolatedLending.userCollateralAmount(address(Borrower2)), 5e7);
-        assertEq(usdt.balanceOf(address(Borrower2)), 2000e6);
+        assertEq(usdt.balanceOf(address(Borrower2)), 52000e6);
         
         assertGt(isolatedLending.totalAmountBorrowed(address(Borrower1)), 8000e6);
         assertGt(isolatedLending.totalAmountBorrowed(address(Borrower2)), 2000e6);
@@ -163,6 +166,22 @@ contract IsolatedLendingV01Test is Test {
 
         assertGt(isolatedLending.totalAmountBorrowed(address(Borrower1)), 8004800080);
         assertGt(isolatedLending.totalAmountBorrowed(address(Borrower2)), 2000199919);
+        // console.log(isolatedLending.totalAmountBorrowed(address(Borrower1)));
+        // console.log(isolatedLending.totalAmountBorrowed(address(Borrower2)));
+
+        vm.startPrank(Borrower1);
+        usdt.approve(address(isolatedLending), 50000e6);
+        isolatedLending.repay(8044900751);
+        vm.stopPrank();
+
+        vm.startPrank(Borrower2);
+        usdt.approve(address(isolatedLending), 50000e6);
+        isolatedLending.repay(2010220077);
+        vm.stopPrank();
+        assertLt(isolatedLending.totalAmountBorrowed(address(Borrower1)), 8000e6);
+        assertLt(isolatedLending.totalAmountBorrowed(address(Borrower2)), 2000e6);
+        assertGt(isolatedLending.totalAssets(), startingTotalAssets);
+
     }
 
     // TODO add test multiple Lender and repayments
