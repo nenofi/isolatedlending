@@ -80,7 +80,7 @@ contract IsolatedLendingV01 is ERC4626{
     uint256 private constant INTEREST_ELASTICITY = 28800e36; // Half or double in 28800 seconds (8 hours) if linear
     
     // Fees
-    uint256 private constant PROTOCOL_FEE = 20000; // 10%
+    uint256 private constant PROTOCOL_FEE = 20000; // 20%
     uint256 private constant PROTOCOL_FEE_DIVISOR = 1e5;
     uint256 private constant BORROW_OPENING_FEE = 50; // 0.05%
     uint256 private constant BORROW_OPENING_FEE_PRECISION = 1e5;
