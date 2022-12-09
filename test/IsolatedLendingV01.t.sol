@@ -166,8 +166,14 @@ contract IsolatedLendingV01Test is Test {
 
         assertGt(isolatedLending.totalAmountBorrowed(address(Borrower1)), 8004800080);
         assertGt(isolatedLending.totalAmountBorrowed(address(Borrower2)), 2000199919);
-        // console.log(isolatedLending.totalAmountBorrowed(address(Borrower1)));
-        // console.log(isolatedLending.totalAmountBorrowed(address(Borrower2)));
+        assertGt(isolatedLending.convertToAssets(isolatedLending.balanceOf(address(Lender1))), isolatedLending.balanceOf(address(Lender1)));
+
+        console.log(isolatedLending.totalAmountBorrowed(address(Borrower1)));
+        console.log(isolatedLending.totalAmountBorrowed(address(Borrower2)));
+        console.log("total amt borrowed: %s",isolatedLending.totalBorrow()); 
+        console.log("protocol fee: %s", isolatedLending.convertToAssets(isolatedLending.balanceOf(address(this)))); 
+        console.log("lender balance: %s", isolatedLending.convertToAssets(isolatedLending.balanceOf(address(Lender1)))); 
+
 
         vm.startPrank(Borrower1);
         usdt.approve(address(isolatedLending), 50000e6);
@@ -388,21 +394,49 @@ contract IsolatedLendingV01Test is Test {
         usdt.approve(address(isolatedLending), 10000e6);
         isolatedLending.addAsset(10000e6);
         vm.stopPrank();
+        console.log("Lender deposits: $%s", 10000e6);
         assertEq(isolatedLending.balanceOf(address(Lender1)), 10000e6);
 
         vm.startPrank(Borrower1);
         wBTC.approve(address(isolatedLending), 1e8);
         isolatedLending.addCollateral(1e8);
-        isolatedLending.borrow(8000e6);
+        console.log("Borrower deposits collateral: %s BTC", 1e8);
+        isolatedLending.borrow(8075e6);
+        console.log("Borrower borrows: $%s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
         vm.stopPrank();
         assertEq(isolatedLending.isSolvent(Borrower1), true);
 
-        vm.warp(block.timestamp+10518975);
+        vm.warp(block.timestamp+7889229);
         isolatedLending.accrue();
-        vm.warp(block.timestamp+10518975);
+        console.log("(3 months) Borrower owes: $%s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
+
+        vm.warp(block.timestamp+7889229);
         isolatedLending.accrue();
-        vm.warp(block.timestamp+10518975);
+        console.log("(6 months) Borrower owes: $%s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
+
+        vm.warp(block.timestamp+7889229);
         isolatedLending.accrue();
+        console.log("(9 months) Borrower owes: $%s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
+
+        vm.warp(block.timestamp+7889229);
+        isolatedLending.accrue();
+        console.log("(12 months) Borrower owes: $%s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
+
+        vm.warp(block.timestamp+7889229);
+        isolatedLending.accrue();
+        console.log("(15 months) Borrower owes: $%s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
+
+        vm.warp(block.timestamp+7889229);
+        isolatedLending.accrue();
+        console.log("(18 months) Borrower owes: $%s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
+
+        vm.warp(block.timestamp+7889229);
+        isolatedLending.accrue();
+        console.log("(21 months) Borrower owes: $%s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
+
+        vm.warp(block.timestamp+7889229);
+        isolatedLending.accrue();
+        console.log("(24 months) Borrower owes: $%s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
 
         vm.startPrank(Borrower1);
         usdt.approve(address(isolatedLending), 1000000e6);

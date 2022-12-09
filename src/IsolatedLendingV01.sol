@@ -18,6 +18,7 @@ pragma solidity ^0.8.16;
 import "solmate/mixins/ERC4626.sol";
 import "./interface/IERC20.sol";
 import "./interface/AggregatorV3Interface.sol";
+import "forge-std/console.sol";
 
 contract IsolatedLendingV01 is ERC4626{
 
@@ -133,7 +134,7 @@ contract IsolatedLendingV01 is ERC4626{
         totalBorrow = totalBorrow + extraAmount;
 
         uint256 feeAmount = extraAmount*PROTOCOL_FEE / PROTOCOL_FEE_DIVISOR;
-        feeFraction = borrowAmountToShares(feeAmount);
+        feeFraction = convertToShares(feeAmount);
         _mint(feeTo, feeFraction);
 
         uint256 utilization = totalBorrow*UTILIZATION_PRECISION / totalAssets();
