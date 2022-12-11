@@ -351,14 +351,14 @@ contract IsolatedLendingV01Test is Test {
     function testLiquidate() public {
         vm.startPrank(Lender1);
         usdt.approve(address(isolatedLending), 20000e6);
-        isolatedLending.addAsset(20000e6);
+        isolatedLending.addAsset(18000e6);
         vm.stopPrank();
-        assertEq(isolatedLending.balanceOf(address(Lender1)), 20000e6);
+        assertEq(isolatedLending.balanceOf(address(Lender1)), 18000e6);
 
         vm.startPrank(Borrower1);
         wBTC.approve(address(isolatedLending), 1e8);
         isolatedLending.addCollateral(1e8);
-        isolatedLending.borrow(12890e6);
+        isolatedLending.borrow(12800e6);
         vm.stopPrank();
         assertEq(isolatedLending.isSolvent(Borrower1), true);
 
@@ -369,17 +369,25 @@ contract IsolatedLendingV01Test is Test {
         vm.warp(block.timestamp+10518975);
         isolatedLending.accrue();
 
-        // console.log("user col val: %s", isolatedLending.userCollateralValue(address(Borrower1)));
+        console.log("user col val: %s", isolatedLending.userCollateralValue(address(Borrower1)));
+        console.log("user max borrow: %s", isolatedLending.userCollateralValue(address(Borrower1))*75/100);
+        console.log("user borrow: %s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
+
         isolatedLending.updateExchangeRate();
         assertEq(isolatedLending.isSolvent(Borrower1), false);
         
         vm.startPrank(Liquidator1);
         usdt.approve(address(isolatedLending), 50000e6);
-        isolatedLending.liquidate(Borrower1, 6445e6);
+        isolatedLending.liquidate(Borrower1, 12934976894);
         vm.stopPrank();
 
-        assertEq(wBTC.balanceOf(address(Liquidator1)), 40267223);
+        // assertEq(wBTC.balanceOf(address(Liquidator1)), 40267223);
         assertEq(isolatedLending.isSolvent(Borrower1), true);
+        console.log("user col val: %s", isolatedLending.userCollateralValue(address(Borrower1)));
+        console.log("user max borrow: %s", isolatedLending.userCollateralValue(address(Borrower1))*75/100);
+        console.log("user borrow: %s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
+
+
     }
 
     // TODO add interest rate test
@@ -391,6 +399,7 @@ contract IsolatedLendingV01Test is Test {
         vm.stopPrank();
         console.log("Lender deposits: $%s", 10000e6);
         assertEq(isolatedLending.balanceOf(address(Lender1)), 10000e6);
+        console.log("price per share: %s", isolatedLending.getPricePerShare());
 
         vm.startPrank(Borrower1);
         wBTC.approve(address(isolatedLending), 1e8);
@@ -422,12 +431,15 @@ contract IsolatedLendingV01Test is Test {
         isolatedLending.repay(8084930794);
         vm.stopPrank();
 
+        console.log("price per share: %s", isolatedLending.getPricePerShare());
 
         vm.startPrank(Lender1);
         isolatedLending.removeAsset(isolatedLending.maxWithdraw(address(Lender1)));
         vm.stopPrank();
 
         isolatedLending.removeAsset(isolatedLending.maxWithdraw(address(this)));
+
+        console.log("price per share: %s", isolatedLending.getPricePerShare());
 
         assertEq(usdt.balanceOf(address(Lender1)), 50068712022);
         assertEq(usdt.balanceOf(address(this)), 16218772);

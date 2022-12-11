@@ -179,7 +179,6 @@ contract IsolatedLendingV01 is ERC4626{
     function liquidate(address _user, uint256 _amount) public {
         updateExchangeRate();
         accrue();
-        require(_amount <= totalAmountBorrowed(_user)/2, "NenoLend: liquidation amount is too high");
         
         if(!isSolvent(_user)){
             uint256 sharesToRepay = borrowAmountToShares(_amount);
@@ -302,7 +301,7 @@ contract IsolatedLendingV01 is ERC4626{
     }
 
     function getPricePerShare() public view returns (uint256){
-        return totalBorrowShares == 0 ? 1e18 : (totalBorrow*1e18)/totalBorrowShares;
+        return totalSupply == 0 ? 1e18 : (totalAssets()*1e18)/totalSupply;
     }
 
     function getInterestPerSecond() external view returns (uint64){
