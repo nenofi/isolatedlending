@@ -3,14 +3,14 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import "../src/test/MockERC20.sol";
-import "../src/IsolatedLendingV01.sol";
+import "../src/IsolatedLendingV01BTCUSDC.sol";
 
 
-contract IsolatedLendingV01Test is Test {
+contract IsolatedLendingV01BTCUSDCTest is Test {
     MockERC20 public neIDR;
     MockERC20 public usdt;
     MockERC20 public wBTC;
-    IsolatedLendingV01 public isolatedLending;
+    IsolatedLendingV01BTCUSDC public isolatedLending;
 
     address public Borrower1 = address(0x2);
     address public Borrower2 = address(0x3);
@@ -24,7 +24,7 @@ contract IsolatedLendingV01Test is Test {
         usdt = new MockERC20("Tether USD", "USDT", 6);
         wBTC = new MockERC20("wrapped BTC", "WBTC", 18);
         // isolatedLending = new IsolatedLendingV01(neIDR, address(usdt), "neRupiahUSDT vault", "neIDR/USDT");
-        isolatedLending = new IsolatedLendingV01(address(usdt), address(wBTC), "usdtwBTC vault", "USDT/wBTC");
+        isolatedLending = new IsolatedLendingV01BTCUSDC(address(usdt), address(wBTC), "usdtwBTC vault", "USDT/wBTC");
 
         vm.startPrank(Lender1);
         neIDR.mint(100000000e18);
@@ -409,6 +409,7 @@ contract IsolatedLendingV01Test is Test {
         console.log("Borrower borrows: $%s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
         vm.stopPrank();
         assertEq(isolatedLending.isSolvent(Borrower1), true);
+        console.log("Lender1 Balance: %s", isolatedLending.convertToAssets(isolatedLending.balanceOf(address(Lender1))));
 
         vm.warp(block.timestamp+7889229);
         isolatedLending.accrue();
@@ -425,6 +426,7 @@ contract IsolatedLendingV01Test is Test {
         vm.warp(block.timestamp+7889229);
         isolatedLending.accrue();
         console.log("(12 months) Borrower owes: $%s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
+        console.log("Lender1 Balance: %s", isolatedLending.convertToAssets(isolatedLending.balanceOf(address(Lender1))));
 
         vm.startPrank(Borrower1);
         usdt.approve(address(isolatedLending), 1000000e6);
