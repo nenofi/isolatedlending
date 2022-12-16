@@ -358,6 +358,10 @@ contract IsolatedLendingV01BTCUSDCTest is Test {
         vm.startPrank(Borrower1);
         wBTC.approve(address(isolatedLending), 1e8);
         isolatedLending.addCollateral(1e8);
+        console.log("user col val: %s", isolatedLending.userCollateralValue(address(Borrower1)));
+        console.log("user max borrow: %s", isolatedLending.userCollateralValue(address(Borrower1))*75/100);
+        console.log("user borrow: %s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
+
         isolatedLending.borrow(12800e6);
         vm.stopPrank();
         assertEq(isolatedLending.isSolvent(Borrower1), true);

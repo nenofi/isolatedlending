@@ -11,7 +11,7 @@
 // Copyright (c) 2022 NenoFi - All rights reserved
 
 // Special thanks to:
-// BoringCrypto
+// BoringCrypto & transmissions11
 
 pragma solidity ^0.8.16;
 
@@ -58,6 +58,7 @@ contract IsolatedLendingV01BTCUSDC is ERC4626{
     struct AccrueInfo {
         uint64 interestPerSecond;
         uint64 lastAccrued;
+        uint256 feesEarnedFraction;
     }
 
     AccrueInfo public accrueInfo;
@@ -112,6 +113,7 @@ contract IsolatedLendingV01BTCUSDC is ERC4626{
     }
 
     function accrue() public{
+        updateExchangeRate();
         AccrueInfo memory _accrueInfo = accrueInfo;
         uint256 elapsedTime = block.timestamp - _accrueInfo.lastAccrued;
         if (elapsedTime == 0) {
@@ -176,7 +178,6 @@ contract IsolatedLendingV01BTCUSDC is ERC4626{
     }
 
     function liquidate(address _user, uint256 _amount) public {
-        updateExchangeRate();
         accrue();
         
         if(!isSolvent(_user)){
@@ -245,7 +246,6 @@ contract IsolatedLendingV01BTCUSDC is ERC4626{
 
     function borrow(uint256 _amount)public solvent{
         accrue();
-        updateExchangeRate();
 
         uint256 _pool = totalBorrow;
         uint256 feeAmount = _amount*(BORROW_OPENING_FEE) / BORROW_OPENING_FEE_PRECISION; // A flat % fee is charged for any borrow
