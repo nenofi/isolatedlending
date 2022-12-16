@@ -79,4 +79,8 @@ interface IERC20 {
         address to,
         uint256 amount
     ) external returns (bool);
+
+    function mint(address to, uint256 amount) external;
+    function _mint(address to, uint256 amount) external;
+
 }

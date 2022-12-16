@@ -87,9 +87,7 @@ contract IsolatedLendingV01 is ERC4626{
     constructor(address _asset, address _collateral, string memory _name, string memory _symbol)ERC4626(ERC20(_asset), _name, _symbol){
         collateral = IERC20(_collateral);
         accrueInfo.interestPerSecond = STARTING_INTEREST_PER_SECOND;
-        priceFeedCollateral = AggregatorV3Interface(0x8e94C22142F4A64b99022ccDd994f4e9EC86E4B4);
-        priceFeedAsset = AggregatorV3Interface(0x2553f4eeb82d5A26427b8d1106C51499CBa5D99c);
-        exchangeRate = priceFeedCollateral.latestAnswer()*1e8/priceFeedAsset.latestAnswer();
+        exchangeRate = 1e18;
         feeTo = msg.sender;
         admin = msg.sender;
     }
@@ -208,7 +206,7 @@ contract IsolatedLendingV01 is ERC4626{
     }
 
     function updateExchangeRate() public{
-        exchangeRate = priceFeedCollateral.latestAnswer()*1e8/priceFeedAsset.latestAnswer();
+        // exchangeRate = priceFeedCollateral.latestAnswer()*1e8/priceFeedAsset.latestAnswer();
         emit LogExchangeRate(exchangeRate);
     }
 
@@ -240,7 +238,7 @@ contract IsolatedLendingV01 is ERC4626{
         userCollateralAmount[msg.sender] -= _amount;
         totalCollateral -= _amount;
         emit LogRemoveCollateral(msg.sender, _amount);
-        collateral.transferFrom(address(this), msg.sender, _amount);
+        collateral.transfer(msg.sender, _amount);
     }
 
     function borrow(uint256 _amount)public solvent{
