@@ -20,6 +20,20 @@ import "./interface/IERC20.sol";
 import "./interface/AggregatorV3Interface.sol";
 import "forge-std/console.sol";
 
+interface IBeefyVault{
+    function balanceOf(address account) external view returns (uint256);
+    function deposit(uint256 amount) external;
+    function _mint(uint256 amount) external;
+    function getPricePerFullShare() external view returns (uint256);
+    function totalSupply() external view returns (uint256);
+    function approve(address spender, uint256 amount) external returns (bool);
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) external returns (bool);
+}
+
 contract IsolatedLendingV01 is ERC4626{
 
     event LogExchangeRate(uint256 rate);
@@ -37,8 +51,10 @@ contract IsolatedLendingV01 is ERC4626{
     address public feeTo;
 
     IERC20 public collateral;
-    AggregatorV3Interface public priceFeedCollateral;
-    AggregatorV3Interface public priceFeedAsset;
+    // AggregatorV3Interface public priceFeedCollateral;
+    // AggregatorV3Interface public priceFeedAsset;
+    IBeefyVault public moobeFTMVault;
+    uint256 public priceFeedAsset;
 
     uint256 public totalBorrow; //amt of assets borrowed + interests by users
     uint256 public totalAsset; //amt of assets deposited by users
@@ -87,7 +103,9 @@ contract IsolatedLendingV01 is ERC4626{
     constructor(address _asset, address _collateral, string memory _name, string memory _symbol)ERC4626(ERC20(_asset), _name, _symbol){
         collateral = IERC20(_collateral);
         accrueInfo.interestPerSecond = STARTING_INTEREST_PER_SECOND;
-        exchangeRate = 1e18;
+        moobeFTMVault = IBeefyVault(0x185647c55633A5706aAA3278132537565c925078);
+        priceFeedAsset = 9e17;
+        exchangeRate = moobeFTMVault.getPricePerFullShare()*priceFeedAsset/1e18;
         feeTo = msg.sender;
         admin = msg.sender;
     }
@@ -197,15 +215,16 @@ contract IsolatedLendingV01 is ERC4626{
         }
     }
 
-    function getCollateralPrice() internal view returns (uint256 collateralPrice){
-        return priceFeedCollateral.latestAnswer();
-    }
+    // function getCollateralPrice() internal view returns (uint256 collateralPrice){
+    //     return priceFeedCollateral.latestAnswer();
+    // }
 
-    function getAssetPrice() internal view returns (uint256 collateralPrice){
-        return priceFeedAsset.latestAnswer();
-    }
+    // function getAssetPrice() internal view returns (uint256 collateralPrice){
+    //     return priceFeedAsset.latestAnswer();
+    // }
 
     function updateExchangeRate() public{
+        exchangeRate = moobeFTMVault.getPricePerFullShare()*priceFeedAsset/1e18;
         // exchangeRate = priceFeedCollateral.latestAnswer()*1e8/priceFeedAsset.latestAnswer();
         emit LogExchangeRate(exchangeRate);
     }

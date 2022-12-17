@@ -103,7 +103,7 @@
 
 //     }
 
-//     function testAddCollateral() public {
+//     function testAddRemoveCollateral() public {
 //         vm.startPrank(Borrower1);
 //         wBTC.approve(address(isolatedLending), 1e8);
 //         isolatedLending.addCollateral(1e8);
@@ -114,6 +114,7 @@
 //         isolatedLending.approve(address(isolatedLending), 1000000e18);
 //         isolatedLending.removeCollateral(1e8);
 //         vm.stopPrank();
+//         assertEq(isolatedLending.userCollateralAmount(address(Borrower1)), 0);
 
 
 //     }
