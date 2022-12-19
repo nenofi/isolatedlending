@@ -79,7 +79,7 @@ contract IsolatedLendingV01 is ERC4626{
     AccrueInfo public accrueInfo;
 
     // Settings for the Medium Risk KashiPair
-    uint256 private constant CLOSED_COLLATERIZATION_RATE = 75000; // 75%
+    uint256 private constant CLOSED_COLLATERIZATION_RATE = 60000; // 60%
     uint256 private constant OPEN_COLLATERIZATION_RATE = 77000; // 77%
     uint256 private constant COLLATERIZATION_RATE_PRECISION = 1e5; // Must be less than EXCHANGE_RATE_PRECISION (due to optimization in math)
     uint256 private constant MINIMUM_TARGET_UTILIZATION = 7e17; // 70%
@@ -104,7 +104,7 @@ contract IsolatedLendingV01 is ERC4626{
         collateral = IERC20(_collateral);
         accrueInfo.interestPerSecond = STARTING_INTEREST_PER_SECOND;
         moobeFTMVault = IBeefyVault(0x185647c55633A5706aAA3278132537565c925078);
-        priceFeedAsset = 9e17;
+        priceFeedAsset = 8e17; //beFTM/FTM
         exchangeRate = moobeFTMVault.getPricePerFullShare()*priceFeedAsset/1e18;
         feeTo = msg.sender;
         admin = msg.sender;
@@ -184,6 +184,9 @@ contract IsolatedLendingV01 is ERC4626{
         uint256 collateralAmount = userCollateralAmount[_user];
         if (collateralAmount == 0) return false;
 
+        // console.log("user collateral value: %s", userCollateralValue(_user));
+        // console.log("user amount borrowed: %s", totalAmountBorrowed(_user));
+        // console.log("moobeftm exchange rate: %s", moobeFTMVault.getPricePerFullShare());
         return userCollateralValue(_user)*CLOSED_COLLATERIZATION_RATE/COLLATERIZATION_RATE_PRECISION >= totalAmountBorrowed(_user);
     }
 
@@ -204,7 +207,7 @@ contract IsolatedLendingV01 is ERC4626{
             asset.transferFrom(msg.sender, address(this), _amount);
             totalAsset += _amount;
 
-            uint256 collateralLiquidated = _amount*1e10/exchangeRate; //1e6*1e10/1e8 = 1e8 (wbtc decimals)
+            uint256 collateralLiquidated = _amount*1e18/exchangeRate; //1e6*1e10/1e8 = 1e8 (wbtc decimals)
             uint256 bonus = collateralLiquidated * 750/10000;
             collateralLiquidated = collateralLiquidated + bonus;
 
@@ -325,6 +328,6 @@ contract IsolatedLendingV01 is ERC4626{
     }
 
     function userCollateralValue(address _user) public view returns (uint256){
-        return userCollateralAmount[_user]*exchangeRate/1e10; //1e8*1e8/1e10 = 1e6 (usdc decimals)
+        return userCollateralAmount[_user]*exchangeRate/1e18; //1e8*1e8/1e10 = 1e6 (usdc decimals)
     }
 }

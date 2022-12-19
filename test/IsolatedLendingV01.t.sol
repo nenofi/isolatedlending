@@ -23,9 +23,9 @@ interface IStrat{
 //     ) external returns (bool);
 // }
 
-contract IsolatedLendingV01BTCUSDCTest is Test {
-    MockERC20 public wftm;
-    IBeefyVault public moobeftm;
+contract IsolatedLendingV01Test is Test {
+    MockERC20 public usdc;
+    MockERC20 public bct;
 
     IsolatedLendingV01 public isolatedLending;
     IStrat public moobeftmStrategy;
@@ -38,23 +38,22 @@ contract IsolatedLendingV01BTCUSDCTest is Test {
     address public Liquidator2 = address(0x7);
 
     function setUp() public {
-        wftm = new MockERC20("wftm", "WFTM", 18);
-        moobeftm = IBeefyVault(0x185647c55633A5706aAA3278132537565c925078);
-        moobeftmStrategy= IStrat(0x2dc8683F752305659ff7F97A7CB4291B1c0Df37b);
+        usdc = new MockERC20("usdc", "USDC", 6);
+        bct = new MockERC20("bct", "BCT", 18);
+        // moobeftm = IBeefyVault(0x185647c55633A5706aAA3278132537565c925078);
+        // moobeftmStrategy= IStrat(0x2dc8683F752305659ff7F97A7CB4291B1c0Df37b);
 
         // isolatedLending = new IsolatedLendingV01(wftm, address(beftm), "neRupiahbeftm vault", "wftm/beftm");
-        isolatedLending = new IsolatedLendingV01(address(wftm), address(moobeftm), "wFTMmoobeFTM vault", "wFTM/moobeFTM");
+        isolatedLending = new IsolatedLendingV01(address(usdc), address(bct), "USDCBCT vault", "USDC/BCT");
 
 
         vm.startPrank(Lender1);
-        wftm.mint(100000e18);
-        // beftm.mint(50000e6);
+        usdc.mint(50000e6);
         vm.stopPrank();
 
-    //     vm.startPrank(Lender2);
-    //     wftm.mint(100000e18);
-    //     // beftm.mint(100000e6);
-    //     vm.stopPrank();
+        vm.startPrank(Lender2);
+        usdc.mint(100000e6);
+        vm.stopPrank();
 
     //     vm.startPrank(Borrower1);
     //     beftm.mint(10000e18);
@@ -74,47 +73,48 @@ contract IsolatedLendingV01BTCUSDCTest is Test {
     // }
     }
 
-    function testSetUp() public{
-        // console.log(moobeftm.balanceOf(address(Borrower1)));
-        console.log("moobeFTM vault share price: %s", moobeftm.getPricePerFullShare()); //beFTM/moobeFTM
-        console.log("moobeFTM/FTM: %s", isolatedLending.exchangeRate()); // moobeFTM/FTM exchangerate
-        assertGt(moobeftm.balanceOf(address(Borrower1)), 1e18);
+    // function testSetUp() public{
+    //     console.log(moobeftm.balanceOf(address(Borrower1)));
+    //     console.log("moobeFTM vault share price: %s", moobeftm.getPricePerFullShare()); //beFTM/moobeFTM
+    //     console.log("moobeFTM/FTM: %s", isolatedLending.exchangeRate()); // moobeFTM/FTM exchangerate
+    //     assertGt(moobeftm.balanceOf(address(Borrower1)), 1e18);
 
-        vm.warp(block.timestamp+7889229);
-        moobeftmStrategy.harvest();
-        isolatedLending.updateExchangeRate();
+    //     vm.warp(block.timestamp+7889229);
+    //     moobeftmStrategy.harvest();
+    //     isolatedLending.updateExchangeRate();
 
-        console.log("moobeFTM vault share price: %s", moobeftm.getPricePerFullShare()); //beFTM/moobeFTM
-        console.log("moobeFTM/FTM: %s", isolatedLending.exchangeRate()); // moobeFTM/FTM exchangerate
+    //     console.log("moobeFTM vault share price: %s", moobeftm.getPricePerFullShare()); //beFTM/moobeFTM
+    //     console.log("moobeFTM/FTM: %s", isolatedLending.exchangeRate()); // moobeFTM/FTM exchangerate
 
-    } 
+    // } 
 
-    function testAddAndRemoveAsset() public{
-        vm.startPrank(Lender1);
-        wftm.approve(address(isolatedLending), 100000e18);
-        isolatedLending.addAsset(100000e18);
-        vm.stopPrank();
-        assertEq(isolatedLending.balanceOf(address(Lender1)), 100000e18);
+    // function testAddAndRemoveAsset() public{
+    //     vm.startPrank(Lender1);
+    //     usdc.approve(address(isolatedLending), 50000e6);
+    //     isolatedLending.addAsset(50000e6);
+    //     vm.stopPrank();
+    //     assertEq(isolatedLending.balanceOf(address(Lender1)), 50000e6);
 
-        vm.startPrank(Lender1);
-        isolatedLending.approve(address(isolatedLending), 1000000e18);
-        isolatedLending.removeAsset(100000e18);
-        vm.stopPrank();
-        assertEq(isolatedLending.balanceOf(address(Lender1)), 0);
-    }
+    //     vm.startPrank(Lender1);
+    //     // isolatedLending.approve(address(isolatedLending), 50000e6);
+    //     usdc.removeAsset(50000e6);
+    //     vm.stopPrank();
+    //     assertEq(isolatedLending.balanceOf(address(Lender1)), 0);
+    // }
 
-    function testAddAndRemoveCollateral() public {
-        vm.startPrank(Borrower1);
-        moobeftm.approve(address(isolatedLending), 1e18);
-        isolatedLending.addCollateral(1e18);
-        vm.stopPrank();
-        assertEq(isolatedLending.userCollateralAmount(address(Borrower1)), 1e18);
+    // function testAddAndRemoveCollateral() public {
+    //     vm.startPrank(Borrower1);
+    //     moobeftm.approve(address(isolatedLending), 1e18);
+    //     isolatedLending.addCollateral(1e18);
+    //     vm.stopPrank();
+    //     assertEq(isolatedLending.userCollateralAmount(address(Borrower1)), 1e18);
+    //     console.log(isolatedLending.userCollateralValue(address(Borrower1)));
 
-        vm.startPrank(Borrower1);
-        moobeftm.approve(address(isolatedLending), 1);
-        isolatedLending.removeCollateral(1e18);
-        vm.stopPrank();
-        assertEq(isolatedLending.userCollateralAmount(address(Borrower1)), 0);
-    }
+    //     vm.startPrank(Borrower1);
+    //     moobeftm.approve(address(isolatedLending), 1);
+    //     isolatedLending.removeCollateral(1e18);
+    //     vm.stopPrank();
+    //     assertEq(isolatedLending.userCollateralAmount(address(Borrower1)), 0);
+    // }
 
 }
