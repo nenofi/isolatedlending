@@ -31,4 +31,5 @@ interface AggregatorV3Interface {
     );
 
   function latestAnswer() external view returns (uint256 answer);
+  function update() external;
 }

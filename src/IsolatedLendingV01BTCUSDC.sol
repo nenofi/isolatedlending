@@ -229,7 +229,7 @@
 //     }
 
 //     function addCollateral(uint256 _amount) public {
-//         userCollateralAmount[msg.sender] += userCollateralAmount[msg.sender] + _amount;
+//         userCollateralAmount[msg.sender] + _amount;
 //         totalCollateral += totalCollateral + _amount;
 //         collateral.transferFrom(msg.sender, address(this), _amount);
 //         emit LogAddCollateral(msg.sender, _amount);

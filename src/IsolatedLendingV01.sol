@@ -18,7 +18,6 @@ pragma solidity ^0.8.16;
 import "solmate/mixins/ERC4626.sol";
 import "./interface/IERC20.sol";
 import "./interface/AggregatorV3Interface.sol";
-import "forge-std/console.sol";
 
 interface IBeefyVault{
     function balanceOf(address account) external view returns (uint256);
@@ -54,7 +53,7 @@ contract IsolatedLendingV01 is ERC4626{
     // AggregatorV3Interface public priceFeedCollateral;
     // AggregatorV3Interface public priceFeedAsset;
     IBeefyVault public moobeFTMVault;
-    uint256 public priceFeedAsset;
+    AggregatorV3Interface public priceFeedAsset;
 
     uint256 public totalBorrow; //amt of assets borrowed + interests by users
     uint256 public totalAsset; //amt of assets deposited by users
@@ -104,8 +103,8 @@ contract IsolatedLendingV01 is ERC4626{
         collateral = IERC20(_collateral);
         accrueInfo.interestPerSecond = STARTING_INTEREST_PER_SECOND;
         moobeFTMVault = IBeefyVault(0x185647c55633A5706aAA3278132537565c925078);
-        priceFeedAsset = 8e17; //beFTM/FTM
-        exchangeRate = moobeFTMVault.getPricePerFullShare()*priceFeedAsset/1e18;
+        priceFeedAsset = AggregatorV3Interface(0x603bfc7e9efAc575A01d07a431281a93B6C6426d); //beFTM/FTM
+        exchangeRate = moobeFTMVault.getPricePerFullShare()*priceFeedAsset.latestAnswer()/1e18;
         feeTo = msg.sender;
         admin = msg.sender;
     }
@@ -184,9 +183,6 @@ contract IsolatedLendingV01 is ERC4626{
         uint256 collateralAmount = userCollateralAmount[_user];
         if (collateralAmount == 0) return false;
 
-        // console.log("user collateral value: %s", userCollateralValue(_user));
-        // console.log("user amount borrowed: %s", totalAmountBorrowed(_user));
-        // console.log("moobeftm exchange rate: %s", moobeFTMVault.getPricePerFullShare());
         return userCollateralValue(_user)*CLOSED_COLLATERIZATION_RATE/COLLATERIZATION_RATE_PRECISION >= totalAmountBorrowed(_user);
     }
 
@@ -208,7 +204,7 @@ contract IsolatedLendingV01 is ERC4626{
             totalAsset += _amount;
 
             uint256 collateralLiquidated = _amount*1e18/exchangeRate; //1e6*1e10/1e8 = 1e8 (wbtc decimals)
-            uint256 bonus = collateralLiquidated * 750/10000;
+            uint256 bonus = collateralLiquidated * 1500/10000;
             collateralLiquidated = collateralLiquidated + bonus;
 
             userCollateralAmount [_user] -= collateralLiquidated;
@@ -218,17 +214,9 @@ contract IsolatedLendingV01 is ERC4626{
         }
     }
 
-    // function getCollateralPrice() internal view returns (uint256 collateralPrice){
-    //     return priceFeedCollateral.latestAnswer();
-    // }
-
-    // function getAssetPrice() internal view returns (uint256 collateralPrice){
-    //     return priceFeedAsset.latestAnswer();
-    // }
-
     function updateExchangeRate() public{
-        exchangeRate = moobeFTMVault.getPricePerFullShare()*priceFeedAsset/1e18;
-        // exchangeRate = priceFeedCollateral.latestAnswer()*1e8/priceFeedAsset.latestAnswer();
+        priceFeedAsset.update();
+        exchangeRate = moobeFTMVault.getPricePerFullShare()*priceFeedAsset.latestAnswer()/1e18;
         emit LogExchangeRate(exchangeRate);
     }
 
@@ -248,7 +236,7 @@ contract IsolatedLendingV01 is ERC4626{
     }
 
     function addCollateral(uint256 _amount) public {
-        userCollateralAmount[msg.sender] += userCollateralAmount[msg.sender] + _amount;
+        userCollateralAmount[msg.sender] + _amount;
         totalCollateral += totalCollateral + _amount;
         collateral.transferFrom(msg.sender, address(this), _amount);
         emit LogAddCollateral(msg.sender, _amount);
@@ -328,6 +316,6 @@ contract IsolatedLendingV01 is ERC4626{
     }
 
     function userCollateralValue(address _user) public view returns (uint256){
-        return userCollateralAmount[_user]*exchangeRate/1e18; //1e8*1e8/1e10 = 1e6 (usdc decimals)
+        return userCollateralAmount[_user]*exchangeRate/1e18; 
     }
 }
