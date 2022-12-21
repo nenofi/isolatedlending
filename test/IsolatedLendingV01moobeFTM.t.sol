@@ -105,10 +105,12 @@ contract IsolatedLendingV01moobeFTMTest is Test {
     }
 
     function testAddAndRemoveCollateral() public {
+        console.log("moobeftm balance: %s", moobeftm.balanceOf(address(Borrower1)));
         vm.startPrank(Borrower1);
         moobeftm.approve(address(isolatedLending), 1e18);
         isolatedLending.addCollateral(1e18);
         vm.stopPrank();
+        // console.log(isolatedLending.userCollateralAmount(address(Borrower1)));
         assertEq(isolatedLending.userCollateralAmount(address(Borrower1)), 1e18);
         // console.log(isolatedLending.userCollateralValue(address(Borrower1)));
 
@@ -272,6 +274,7 @@ contract IsolatedLendingV01moobeFTMTest is Test {
 
         // // assertEq(wBTC.balanceOf(address(Liquidator1)), 40267223);
         assertEq(isolatedLending.isSolvent(Borrower1), true);
+        assertEq(isolatedLending.totalBorrow(), 0);
         // console.log("user col val: %s", isolatedLending.userCollateralValue(address(Borrower1)));
         // console.log("user max borrow: %s", isolatedLending.userCollateralValue(address(Borrower1))*75/100);
         // console.log("user borrow: %s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
