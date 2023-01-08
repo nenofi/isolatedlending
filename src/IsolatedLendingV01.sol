@@ -16,7 +16,7 @@
 pragma solidity ^0.8.16;
 
 import "solmate/mixins/ERC4626.sol";
-// import "./interface/IERC20.sol";
+import "./interface/IERC20.sol";
 import "./interface/AggregatorV3Interface.sol";
 
 interface IBeefyVault{
