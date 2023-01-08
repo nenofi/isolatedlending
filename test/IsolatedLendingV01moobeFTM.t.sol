@@ -237,10 +237,11 @@ contract IsolatedLendingV01moobeFTMTest is Test {
         vm.startPrank(Borrower1);
         moobeftm.approve(address(isolatedLending), 11000e18);
         isolatedLending.addCollateral(11000e18);
-        isolatedLending.borrow(5350e18);
+        isolatedLending.borrow(5360e18);
         vm.stopPrank();
         assertEq(isolatedLending.isSolvent(Borrower1), true);
         console.log("START BORROW");
+        console.log("user collateral amt: %s", isolatedLending.userCollateralAmount(address(Borrower1)));
         console.log("user col val: %s", isolatedLending.userCollateralValue(address(Borrower1)));
         console.log("user max borrow: %s", isolatedLending.userCollateralValue(address(Borrower1))*60/100);
         console.log("user borrow: %s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
@@ -253,6 +254,7 @@ contract IsolatedLendingV01moobeFTMTest is Test {
         isolatedLending.accrue();
 
         console.log("INSOLVENT");
+        console.log("user collateral amt: %s", isolatedLending.userCollateralAmount(address(Borrower1)));
         console.log("user col val: %s", isolatedLending.userCollateralValue(address(Borrower1)));
         console.log("user max borrow: %s", isolatedLending.userCollateralValue(address(Borrower1))*60/100);
         console.log("user borrow: %s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
@@ -262,15 +264,17 @@ contract IsolatedLendingV01moobeFTMTest is Test {
         
         vm.startPrank(Liquidator1);
         wftm.approve(address(isolatedLending), 10000e18);
-        isolatedLending.liquidate(Borrower1, 6308500826112756608831);
+        isolatedLending.liquidate(Borrower1, 6542102508681602056434);
         vm.stopPrank();
 
         console.log("LIQUIDATED");
+        console.log("user collateral amt: %s", isolatedLending.userCollateralAmount(address(Borrower1)));
         console.log("user col val: %s", isolatedLending.userCollateralValue(address(Borrower1)));
         console.log("user max borrow: %s", isolatedLending.userCollateralValue(address(Borrower1))*60/100);
         console.log("user borrow: %s", isolatedLending.totalAmountBorrowed(address(Borrower1)));
 
-        console.log(moobeftm.balanceOf(Liquidator1)*moobeftm.getPricePerFullShare()/1e18);
+        console.log("liquidator moobeftm balance: %s",moobeftm.balanceOf(Liquidator1));
+        // *moobeftm.getPricePerFullShare()/1e18);
 
         // // assertEq(wBTC.balanceOf(address(Liquidator1)), 40267223);
         assertEq(isolatedLending.isSolvent(Borrower1), true);
